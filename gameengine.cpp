@@ -683,6 +683,13 @@ void gameengine::play()
     **********/
     if (logic->getMode() == STORYMODE)
     {
+        //setup character's initial position on the board
+        if (menu->currentScreen() == NOMENU)
+        {
+            localx = logic->x;
+            localy = logic->y;
+        }
+        
         menu->setScreen(NOMENU);
         menu->selector.display = false;
         logic->character = ALEX; //set character to ALEX by default
@@ -702,10 +709,22 @@ void gameengine::play()
             
         //draw their character above the store picture
         drawCharacter(logic->character, 50, 150, SCALEDOWN);
+        
+        //character's position on the SCREEN versus his position on the game window
+        
+        
+        if (localx % 5 == 0 && localx != 0)
+            localx -= 5;
+        if (localy %5 == 0 && localy != 0)
+            localy -= 5;
          
         //draw the character on the screen   
-        drawCharacter(logic->character, (logic->y * BLOCKWIDTH)+BOARDOFFSETX+10, 
-                (logic->x * BLOCKHEIGHT)+BOARDOFFSETY-(BLOCKHEIGHT*2), 1);
+        drawCharacter(logic->character, (localy * BLOCKWIDTH)+BOARDOFFSETX+10, 
+                (localx * BLOCKHEIGHT)+BOARDOFFSETY-(BLOCKHEIGHT*2), 1);
+         
+        //old version       
+        //drawCharacter(logic->character, (logic->y * BLOCKWIDTH)+BOARDOFFSETX+10, 
+        //        (logic->x * BLOCKHEIGHT)+BOARDOFFSETY-(BLOCKHEIGHT*2), 1);
             
         //draw the store on the screen
         draw_sprite(buffer, graphics->storeimg, 10, 285);
@@ -845,7 +864,13 @@ void gameengine::play()
         {
             textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "0,0,0: %d", logic->getBlock(0, 0, 0));
             textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "X: %d", logic->x);
-            textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Y: %d", logic->y); 
+            textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Y: %d", logic->y);
+            textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Z: %d", logic->depth);                
+            textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Right: %d", logic->tallBlock(logic->x, logic->y+1, logic->depth));
+            textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Left: %d", logic->tallBlock(logic->x, logic->y-1, logic->depth));
+            textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Up: %d", logic->tallBlock(logic->x-1, logic->y, logic->depth));
+            textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Down: %d", logic->tallBlock(logic->x+1, logic->y, logic->depth));
+
         }
         
     }//end debugger is on
@@ -967,21 +992,34 @@ void gameengine::buildBoard()
 **************/	
 void gameengine::drawBuildBoard(int xpos, int ypos)
 {
-    int x, y, LOW;
+    int x, y, localx, localy, LOW;
     
-    x = 0;
-    y = 0;
-    LOW = 3;
+    x = y = 0;
+    localx = xpos;
+    localy = ypos;
     
 /*    if (ypos <= LOW)
         y = ypos-DRAWBOARDMINOFFSET;
     if (xpos <= LOW)
         x = xpos-DRAWBOARDMINOFFSET;
 */ 
+
+if (localx % 5 != 0)
+    localx -= 5;  
+    
+if (localy % 5 != 0)
+    localy -= 5;
+    
+if (localx < 0)
+    localx = 0;
+    
+if (localy < 0)
+    localy = 0;  
+    
        
-    for (int i = xpos; i < xpos+DRAWBOARDMAXOFFSET; i++) //-DRAWBOARDMINOFFSET; i < xpos+DRAWBOARDMAXOFFSET; i++)
+    for (int i = localx; i < localx+DRAWBOARDMAXOFFSET; i++) //-DRAWBOARDMINOFFSET; i < xpos+DRAWBOARDMAXOFFSET; i++)
     {
-        for (int j = ypos; j < ypos+DRAWBOARDMAXOFFSET+1; j++)
+        for (int j = localy; j < localy+DRAWBOARDMAXOFFSET+1; j++)
         {
             
             /*if (logic->getBlock(i, j, 3) != NOBLOCK) //BOTTOM BLOCKS (draw these first)

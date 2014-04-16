@@ -393,15 +393,15 @@ bool game::validMove(int newx, int newy)
 {
     int localx, localy;
     
-    localx = x + newx;
-    localy = y + newy;
+    newx = x + newx;
+    newy = y + newy;
     
     //there is a tall block there
-    if (tallBlock(localx, localy, depth))
+    if (tallBlock(newx, newy, 0))
         return 0;     
         
-    if (getBlock(localx, localy, depth) == NOBLOCK)
-        return 0;
+    //if (getBlock(localx, localy, depth) == NOBLOCK)
+    //    return 0;
         
     return 1;
 }
@@ -845,68 +845,63 @@ bool game::parseSavedFile(char *filename)
 * Precondition: the level to check under, the x and y position of the block
 * Postcondition: returns true if there is a tall block there, otherwise false
 ***********/
-bool game::tallBlock(int x, int y, int level)
+int game::tallBlock(int x, int y, int level)
 {
     if (mode == BUILDMODE)
     {
         switch (level)
         {
         
-            case 4: if (buildmap3[x][y] == THOUSE || buildmap3[x][y] == TSTONE)
+            case 3: if (buildmap3[x][y] == THOUSE || buildmap3[x][y] == TSTONE)
                         return true;
                     else
                         return false;
                     break;
             
-            case 3: if (buildmap2[x][y] == THOUSE || buildmap2[x][y] == TSTONE)
+            case 2: if (buildmap2[x][y] == THOUSE || buildmap2[x][y] == TSTONE)
                         return true;
                     else
                         return false;
                     break;  
                     
-            case 2: if (buildmap1[x][y] == THOUSE || buildmap1[x][y] == TSTONE)
+            case 1: if (buildmap1[x][y] == THOUSE || buildmap1[x][y] == TSTONE)
                         return true;
                     else
                         return false;
                     break;
-            case 1: if (buildmap0[x][y] == THOUSE || buildmap0[x][y] == TSTONE)
+            case 0: if (buildmap0[x][y] == THOUSE || buildmap0[x][y] == TSTONE)
                         return true;
                     else
                         return false;
                     break;
-            case 0:
-                    return false;
-                    break;
+
         }  
     }
     else //storymode
     {
         switch (level)
         {
-            case 4: if (storymap3[x][y] == THOUSE || storymap3[x][y] == TSTONE)
+            case 3: if (storymap3[x][y] == THOUSE || storymap3[x][y] == TSTONE)
                         return true;
                     else
                         return false;
                     break;
             
-            case 3: if (storymap2[x][y] == THOUSE || storymap2[x][y] == TSTONE)
+            case 2: if (storymap2[x][y] == THOUSE || storymap2[x][y] == TSTONE)
                         return true;
                     else
                         return false;
                     break;  
                     
-            case 2: if (storymap1[x][y] == THOUSE || storymap1[x][y] == TSTONE)
+            case 1: if (storymap1[x][y] == THOUSE || storymap1[x][y] == TSTONE)
                         return true;
                     else
                         return false;
                     break;
-            case 1: if (storymap0[x][y] == THOUSE || storymap0[x][y] == TSTONE)
+            case 0: if (storymap0[x][y] == THOUSE || storymap0[x][y] == TSTONE)
                         return true;
                     else
                         return false;
-                    break;
-            case 0:
-                    return false;
                     break;
         }
     } 

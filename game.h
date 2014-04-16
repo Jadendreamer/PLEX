@@ -108,7 +108,7 @@ class game
 		void addBlock(int i, int j, int level, int type); //put a block here
 		void fillLevel(int level); //fill a story level with blocks
 		void fillArray(int map[SMAP_HEIGHT][SMAP_WIDTH]); //fill story array with 
-		bool tallBlock(int x, int y, int level); //see if there is a tall block under this level
+		int tallBlock(int x, int y, int level); //see if there is a tall block under this level
 		
 		//game functions
 		bool gameOver(); //returns true if game is over
