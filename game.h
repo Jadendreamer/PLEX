@@ -85,16 +85,16 @@ class game
 {
 	public:
 		game(); // class constructor
-		void randommap(); //randomize the map
-		bool gameover(); //returns true if game is over
-		int getblock(int i, int j, int level); //returns the block at that spot
+		void randomMap(); //randomize the map
+		bool gameOver(); //returns true if game is over
+		int getBlock(int i, int j, int level); //returns the block at that spot
 		void gravity(); //make blocks fall down
-		void addblock(); //adds a block to the highest map level
-		void filllevel(int level); //fill a level with blocks
-		void fillarray(int map[MAP_HEIGHT][MAP_WIDTH]); //fill this array with blocks
-		void loadgame(char filename[]); //load a game from a file
-		void setmode(int newmode); //set the game play mode
-		int getmode(); //returns the game play mode
+		void addBlock(); //adds a block to the highest map level
+		void fillLevel(int level); //fill a level with blocks
+		void fillArray(int map[MAP_HEIGHT][MAP_WIDTH]); //fill this array with blocks
+		void loadGame(char filename[]); //load a game from a file
+		void setMode(int newmode); //set the game play mode
+		int getMode(); //returns the game play mode
 		
 	private:
         int map4[MAP_HEIGHT][MAP_WIDTH]; //highest level of the map

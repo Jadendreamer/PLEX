@@ -8,9 +8,12 @@
 #define GAMEENGINE_H
 
 #include <cstdlib> //c stardard library
+#include <stdio.h>
 #include <cmath> //math library
 #include <allegro.h> //allegro library
 #include <winalleg.h> //override windows info
+#include <process.h>
+#include <string.h>
 #include "graphics.h" //graphic files
 #include "music.h" //music files
 //#include "timer.h" //game timer files
@@ -52,11 +55,10 @@ class gameengine
 		//game win/loose checking
 		bool gameover(); //they lost the game
 		bool gamewon(); //they won the game
+		int quit(); //quit the game
 		
 		//Menu related options
-		BITMAP *showmenu(int type); //show the appropriate menu screen
-		BITMAP *selector(int x, int y); //show the selector
-		int selected(int menu, int x, int y); //they have selected something on a menu
+		int currentMenu(); //returns the current menu in use
 		
 		//Movie related options
 		bool loadmovie(); //load any video files
@@ -84,6 +86,9 @@ class gameengine
         char *stringquery();
         int intquery();
         
+        //internet related functions
+        int openWindow(char *url); //open the specified url in a browser window
+        
     private:	
         
         //variables used in the game
@@ -99,6 +104,7 @@ class gameengine
         gamemusic *music;
         gamegraphics *graphics;
         database *db; 
+        game *logic;
         //timer *time;
         
         //keydown codes used for input

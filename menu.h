@@ -22,8 +22,10 @@
 #define LOADGAMEIMAGE       "images/loadgame.pcx"
 #define SAVEGAMEIMAGE       "images/loadgame.pcx"
 #define SELECTORIMAGE       "images/smallbluegem.pcx"
+#define BUILDLOGINIMAGE     "images/buildlogin.pcx"
 
 //game menu screens
+#define NOMENU 0
 #define LOADINGSCREEN 1
 #define NEWGAMESCREEN 2
 #define GAMEMODESCREEN 3
@@ -31,7 +33,8 @@
 #define STORESCREEN 5
 #define LOADGAMESCREEN 6
 #define SAVEGAMESCREEN 7
-#define NOMENU 8
+#define BUILDLOGINSCREEN 8
+#define CHARACTERSCREEN 9
 
 class gamemenu
 {
@@ -49,8 +52,7 @@ class gamemenu
 		SPRITE selector; //select things from the game map
 		void setSelectorY(int amount); //change the selector y value
 		void setSelectorX(int amount); //change the selector x value
-		bool shown; //the screen was shown on the screen
-		
+		bool shown; //the screen was shown on the screen	
 		
 	private:
         gamegraphics *graphics; //start the game graphics class
@@ -62,6 +64,7 @@ class gamemenu
         BITMAP *loadgame; //the loadgame menu screen
         BITMAP *savegame; //the save a game menu screen
         BITMAP *select; //the selector jewel
+        BITMAP *build; //the build login screen
         int screen; //the menu screen that they're on
 
 };

@@ -18,12 +18,10 @@ gameengine::gameengine(BITMAP *gbuffer)
         movie = new gamemovie();
         music = new gamemusic();
         graphics = new gamegraphics();
+        logic = new game();
         db = new database();
         error = 0; 
         //time = new timer();
-        
-        //set the default game mode
-        gamemode = CHARACTERMODE;
         
         //show the mouse
         mouse(true);
@@ -31,6 +29,12 @@ gameengine::gameengine(BITMAP *gbuffer)
         //create the buffer
         buffer = gbuffer;
         clear(buffer);
+        
+        //setup the GUI dialog colors
+        gui_fg_color = makecol(255, 255, 255); //white text
+        gui_mg_color = makecol(128, 128, 128); //grayed out dialog box
+        gui_bg_color = makecol(102, 51, 51); //background color
+   
 }
 
 /**************
@@ -54,6 +58,9 @@ bool gameengine::loading()
     
     //load the sounds for music
     
+    //done loading, show the initial menu
+    menu->setScreen(NEWGAMESCREEN);    
+
     return true;
 }
 
@@ -112,6 +119,22 @@ void gameengine::input()
 void gameengine::keyinput()
 {
     
+    /**********
+    * QUITTING THE GAME
+    *
+    * they are hitting the ESC key
+    **********/
+    if (key[KEY_ESC])
+    {
+        if (quit())
+        {
+            //deallocate used up space
+            exitEngine();
+        
+            //exit allegro now
+            exit(1);
+        }
+    }
     /**********
     * MENUS
     *
@@ -228,46 +251,62 @@ void gameengine::mouseinput()
             if (mouse_x >= 343 && mouse_y >= 300 && mouse_y <= 321 && mouse_x <= 470
             && menu->selector.y > (GAMEWIDTH/3) + 37)
             {
+                //blit the current screen as you move the selector
                 blit(menu->getScreen(0), buffer, menu->selector.x, menu->selector.y, menu->selector.x, 
                     menu->selector.y, menu->selector.w, menu->selector.h);
             
                 menu->setSelectorY(-moveamt);
             }
                 
-            if (debugger) //show clickable area for right click below
+            if (debugger) //show clickable area for left click below
                 rect(buffer, 343, 300, 470, 321, makecol(255, 255, 255));
             
-            //right clicked on start a new game
+            //left clicked on start a new game
             if (mouse_x >= 343 && mouse_y >= 300 && mouse_y <= 321 && mouse_x <= 470 
-            && (mouse_b & 1) && rightmousepressed == false)
+            && (mouse_b & 1) && leftmousepressed == false)
             {
-                menu->setScreen(GAMEMODESCREEN); //show the new screen
-                rightmousepressed = true;
+                menu->setScreen(GAMEMODESCREEN); //show the new game mode screen
+                leftmousepressed = true;
             }
             
             //move the selector down if mouse is down on load game
             if (mouse_x >= 343 && mouse_y >= 350 && mouse_y <= 380 && mouse_x <= 470 
             && menu->selector.y < (GAMEWIDTH/3) + 37 + moveamt)
             {
+                //blit the current screen as you move the selector
                 blit(menu->getScreen(0), buffer, menu->selector.x, menu->selector.y, menu->selector.x, 
                     menu->selector.y, menu->selector.w, menu->selector.h);
                     
                 menu->setSelectorY(moveamt);
             }
             
-            if (debugger) //show clickable area for right click below
+            if (debugger) //show clickable area for left click below
                 rect(buffer, 343, 350, 470, 380, makecol(255, 255, 255));
                 
             //right clicked to load a game   
             if (mouse_x >= 343 && mouse_y >= 350 && mouse_y <= 380 && mouse_x <= 470 
-            && (mouse_b & 1) && rightmousepressed == false)
+            && (mouse_b & 1) && leftmousepressed == false && menu->currentScreen() == NEWGAMESCREEN)
             {
                 menu->setScreen(LOADGAMESCREEN); //show the new screen
                 menu->selector.display = false; //turn off the selector
                 leftmousepressed = true;
             }
             
+            //right clicked to build mode  
+            if (mouse_x >= 343 && mouse_y >= 350 && mouse_y <= 380 && mouse_x <= 470 
+            && (mouse_b & 1) && leftmousepressed == false && menu->currentScreen() == GAMEMODESCREEN)
+            {
+                menu->setScreen(BUILDLOGINSCREEN);
+                menu->selector.display = false; //turn off the selector
+                leftmousepressed = true;
+            }
+            
         } //end if they are picking a new game or a game mode screen
+        
+        //if (menu->currentScreen() == BUILDLOGINSCREEN && (mouse_b & 1) && leftmousepressed == false)
+        //{
+        //openWindow("http://whiteoakstables.net"); 
+        //}
         
         //they are picking their character to play the game as
         
@@ -301,7 +340,23 @@ void gameengine::play()
     * respond to keyboard and mouse usage
     **********/
     
+    //quit();
+    
     input(); 
+    
+    /**********
+    * BUILD MODE
+    *
+    * they are in build mode, show the appropriate screens
+    **********/
+    
+    //show a menu if one is set, only display it once
+    if (logic->getMode() == BUILDMODE)
+    {
+        //do stuff here
+        
+    }
+    
     
     /**********
     * MENUS
@@ -349,9 +404,16 @@ void gameengine::play()
     //display the selector once until its moved
     if (debugger)
     {
-        textprintf_centre_ex(buffer, font, 65, 0, makecol(255, 255, 255), 0, "Selector Y: %d", menu->selector.y);
-        textprintf_centre_ex(buffer, font, 65, 25, makecol(255, 255, 255), 0, "Mouse: %d, %d", mouse_x, mouse_y);
-        //textprintf_centre_ex(buffer, font, 65, 25, makecol(255, 255, 255), 0, "Timer: %d", time->getTime());
+        int down = 15;
+        int over = 65;
+        textprintf_centre_ex(buffer, font, over, down, makecol(255, 255, 255), 0, "Selector Y: %d", menu->selector.y);
+        textprintf_centre_ex(buffer, font, over, down*2, makecol(255, 255, 255), 0, "Mouse: %d, %d", mouse_x, mouse_y);
+        
+        if (logic->getMode() == STORYMODE)
+            textprintf_centre_ex(buffer, font, over, down*3, makecol(255, 255, 255), 0, "Game Mode: Story");
+            
+        if (logic->getMode() == BUILDMODE)
+            textprintf_centre_ex(buffer, font, over, down*3, makecol(255, 255, 255), 0, "Game Mode: Build");
     }
     
     exitError(); //exit if there was an error
@@ -470,37 +532,14 @@ bool gameengine::gamewon()
 }
 		
 /**************
-* Purpose: show the appropriate menu screen
+* Purpose: returns the current menu the game is using
 * Precondition: none
-* Postcondition: menu screen is on the buffer
+* Postcondition: menu id (NOT BITMAP) returned
 **************/
-BITMAP *gameengine::showmenu(int type)
+int gameengine::currentMenu()
 {
-        
-    return NULL; 
-}
-
-/**************
-* Purpose: show the selector at these coordinates
-* Precondition: none
-* Postcondition: the selector is on the buffer
-**************/
-BITMAP *gameengine::selector(int x, int y)
-{
-    
-    return NULL;
-    
-}
-
-/**************
-* Purpose: they selected something on a menu
-* Precondition: the menu they were on, the position of the selector
-* Postcondition: respond to the menu selection
-**************/
-int gameengine::selected(int menu, int x, int y)
-{
-    return 0;  
-} 
+   return menu->currentScreen();
+}   
 		
 /**************
 * Purpose: setup and play the appropriate movie
@@ -681,3 +720,30 @@ bool gameengine::exitEngine()
     
     return 1;
 }
+
+/**************
+* Purpose: open a browser window to the specified url
+* Precondition: the url to open
+* Postcondition: window has been opened
+**************/
+int gameengine::openWindow(char *url)
+{
+    char call[250];
+    sprintf(call, "url.dll, FileProtocolHandler %s", url);
+    ShellExecute(NULL, "open", "rundll32", call, "", SW_SHOWNOACTIVATE);
+    return 0;
+}
+
+/**************
+* Purpose: ask the user if they want to exit the game
+* Precondition: none
+* Postcondition: memory used by graphics have been released
+**************/
+int gameengine::quit(void)
+{
+   if (alert("PLEX", NULL, "Are you sure you want to quit?", "&Yes", "&No", 'y', 'n') == 1)
+      return 1;
+   else
+      return 0;
+}
+

@@ -40,6 +40,8 @@ bool gamemenu::loadgraphics(int width, int height)
     
     savegame = graphics->blitBigger(load_bitmap(SAVEGAMEIMAGE, NULL), width/6, height/6, width, height);
     
+    build = load_bitmap(BUILDLOGINIMAGE, NULL);
+    
     //the selector image
     select = load_bitmap(SELECTORIMAGE, NULL);
     
@@ -48,8 +50,6 @@ bool gamemenu::loadgraphics(int width, int height)
     selector.y = (width/3) + 37; //selector y position
     selector.w = select->w; //selector width
     selector.h = select->h; //selector height 
-    
-    setScreen(NEWGAMESCREEN); //set the screen to the new game screen
     
     return true;
 }
@@ -146,6 +146,10 @@ BITMAP *gamemenu::getScreen(int num)
                 break;
                 
             case SAVEGAMESCREEN: return savegame; //saving a game screen
+                break;
+            
+            case BUILDLOGINSCREEN: return build; //build login screen
+                break;
                 
             default: return NULL;
                 break;   
@@ -172,6 +176,10 @@ BITMAP *gamemenu::getScreen(int num)
                 break;
                 
             case SAVEGAMESCREEN: return savegame; //saving a game screen
+                break;
+                
+            case BUILDLOGINSCREEN: return build; //build login screen
+                break;
                 
             default: return NULL;
                 break; 
@@ -193,4 +201,5 @@ void gamemenu::destorygraphics()
     destroy_bitmap(loadgame);
     destroy_bitmap(savegame);
     destroy_bitmap(select);
+    destroy_bitmap(build);
 }

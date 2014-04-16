@@ -38,7 +38,7 @@ game::game()
 * Precondition: x value, y value, map level
 * Postcondition: returns the block for that map
 ***********/
-int game::getblock(int i, int j, int level)
+int game::getBlock(int i, int j, int level)
 {
     switch (level)
     {
@@ -104,7 +104,7 @@ void game::gravity()
 * Precondition: none
 * Postcondition: map game is filled with blocks
 ***********/
-void game::randommap()
+void game::randomMap()
 {
     //seed the random number generator
     srand(time(NULL) + rand());
@@ -157,7 +157,7 @@ void game::randommap()
 * Precondition: none
 * Postcondition: map has one additional block
 ***********/
-void game::addblock()
+void game::addBlock()
 {
     //seed the random number generator
     srand(time(NULL) + rand());
@@ -181,23 +181,23 @@ void game::addblock()
 * Precondition: level to fill
 * Postcondition: level is filled with blocks
 ***********/
-void game::filllevel(int level)
+void game::fillLevel(int level)
 {
     switch (level)
     {
-        case 0: fillarray(map0);
+        case 0: fillArray(map0);
             break;
             
-        case 1: fillarray(map1);
+        case 1: fillArray(map1);
             break;
             
-        case 2: fillarray(map2);
+        case 2: fillArray(map2);
             break;
         
-        case 3: fillarray(map3);
+        case 3: fillArray(map3);
             break;
         
-        case 4: fillarray(map4);
+        case 4: fillArray(map4);
             break;
             
         default:
@@ -210,7 +210,7 @@ void game::filllevel(int level)
 * Precondition: array to fill
 * Postcondition: array is filled with blocks
 ***********/
-void game::fillarray(int map[MAP_HEIGHT][MAP_WIDTH])
+void game::fillArray(int map[MAP_HEIGHT][MAP_WIDTH])
 {
     for (int i = 0; i < MAP_HEIGHT; i++)
         for (int j = 0; j < MAP_WIDTH; j++) 
@@ -229,7 +229,7 @@ void game::fillarray(int map[MAP_HEIGHT][MAP_WIDTH])
 * Precondition: mode is either story mode or build mode
 * Postcondition: if mode is correct, then mode is set
 ***********/
-void game::setmode(int newmode)
+void game::setMode(int newmode)
 {
         mode = newmode;
 }
@@ -239,7 +239,7 @@ void game::setmode(int newmode)
 * Precondition: none
 * Postcondition: game mode returned
 ***********/
-int game::getmode()
+int game::getMode()
 {
     return mode;    
 }
@@ -249,7 +249,7 @@ int game::getmode()
 * Precondition: none
 * Postcondition: returns over value
 ***********/
-bool game::gameover()
+bool game::gameOver()
 {
     return over;    
 }
