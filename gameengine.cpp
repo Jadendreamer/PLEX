@@ -227,32 +227,13 @@ void gameengine::keyInput()
         {
             if (logic->x > 0)
             {
-                                
-                if (logic->validMove(-1, 0))
-                {
-                    //change the board if they've gone out of range of the data
-                    //that is currently loaded
-                    buildBoard(); 
-                    
-                    //calculate blitting area based on current position
-                    //calculateBlitPosition(0);
-                     
-                    //remove the old character from the screen                   
-                    //blit(graphics->boardimg, buffer, TOPX, TOPY, TOPX, TOPY, BOTTOMX, BOTTOMY);
-
-                    //increment position of the character
+                        
+                //increment position of the character        
+                if (logic->validMove(-1, 0)) 
                     logic->x--;
-                    localy = logic->x % 6;
-                    
-                    //draw the character again on the screen
-                    //drawCharacter(logic->character, (localx * BLOCKWIDTH)+BOARDOFFSETX, 
-                    //    (localy * BLOCKHEIGHT)+BOARDOFFSETY-(BLOCKHEIGHT*2), 1);
-          
-                    //check to see if they are behind a tall block
-                    //if so, draw the block over the character 
-                    //blockOver();
-                            
-                } //end valid move
+                else
+                    ; //play error sound
+  
             } //end within entire map bounds
             
             upPressed = true;
@@ -264,32 +245,9 @@ void gameengine::keyInput()
             if (logic->x < 100)
             {
       
+                //increment position of the character
                 if (logic->validMove(1, 0))
-                {
-                    //change the board if they've gone out of range of the data
-                    //that is currently loaded
-                    buildBoard();
-                    
-                    //calculate blitting area based on current position
-                    //calculateBlitPosition(0);
-                     
-                    //remove the old character from the screen                   
-                    //blit(graphics->boardimg, buffer, TOPX, TOPY, TOPX, TOPY, BOTTOMX, BOTTOMY);
-                        
-                    //increment position of the character
-                    logic->x++;
-                    localy = logic->x % 6;
-                    
-                    //draw the character again on the screen
-                    //drawCharacter(logic->character, (localx * BLOCKWIDTH)+BOARDOFFSETX, 
-                    //    (localy * BLOCKHEIGHT)+BOARDOFFSETY-(BLOCKHEIGHT*2), 1);
-                            
-                    //check to see if they are behind a tall block
-                    //if so, draw the block over the character 
-                    //blockOver();
-                        
-                } //end valid move
-                
+                    logic->x++;                
                 else //play error sound
                     ;
                     
@@ -305,34 +263,11 @@ void gameengine::keyInput()
             if (logic->y > 0)
             {
                 
+                //increment position of the character
                 if (logic->validMove(0, -1))
-                {
-                    //change the board if they've gone out of range of the data
-                    //that is currently loaded
-                    buildBoard(); 
-                    
-                    //calculate blitting area based on current position
-                    //calculateBlitPosition(1);
-                     
-                    //remove the old character from the screen                   
-                    //blit(graphics->boardimg, buffer, TOPX, TOPY, TOPX, TOPY, BOTTOMX, BOTTOMY);
-                       
-                    //increment position of the character
                     logic->y--;
-                    localx = logic->y % 5;
-                    
-                    //draw the character again on the screen
-                    //drawCharacter(logic->character, (localx * BLOCKWIDTH)+BOARDOFFSETX, 
-                    //    (localy * BLOCKHEIGHT)+BOARDOFFSETY-(BLOCKHEIGHT*2), 1);
-                            
-                    //check to see if they are behind a tall block
-                    //if so, draw the block over the character 
-                    //blockOver();
-                        
-                } //end valid move
-                
-                else //play error sound
-                    ;
+                else
+                    ; //play error sound
                 
             } //end within entire map bounds
             
@@ -345,34 +280,12 @@ void gameengine::keyInput()
             if (logic->y < 100)
             {
                 
+                //increment position of the character
                 if (logic->validMove(0, 1))
-                {
-                    //change the board if they've gone out of range of the data
-                    //that is currently loaded
-                    //buildBoard(); 
-                    
-                    //calculate blitting area based on current position
-                    //calculateBlitPosition(0);
-                     
-                    //remove the old character from the screen                   
-                    //blit(graphics->boardimg, buffer, TOPX-25, TOPY-25, TOPX-25, TOPY-25, BOTTOMX, BOTTOMY);
-                       
-                    //increment position of the character
                     logic->y++;
-                    localx = logic->y % 5;
-                    
-                    //draw the character again on the screen
-                    //drawCharacter(logic->character, (localx * BLOCKWIDTH)+BOARDOFFSETX, 
-                    //    (localy * BLOCKHEIGHT)+BOARDOFFSETY-(BLOCKHEIGHT*2), 1);
-     
-                    //check to see if they are behind a tall block
-                    //if so, draw the block over the character 
-                    //blockOver();
-                        
-                } //end valid move
-                
                 else //play error sound
                     ;
+                    
             } //end within entire map bounds
             
             rightPressed = true; 
@@ -499,9 +412,9 @@ void gameengine::mouseInput()
     *
     * they are playing in build mode
     **********/
-    if (logic->getMode() == BUILDMODE)
+    if (logic->getMode() == BUILDMODE || logic->getMode() == STORYMODE)
     {
-        textprintf_ex(buffer, font, 200, 200, makecol(255, 255, 255), 0, "Clicked");
+        //textprintf_ex(buffer, font, 200, 200, makecol(255, 255, 255), 0, "Clicked");
             
         // left click
         if ((mouse_b & 1) && lmPressed == false)
@@ -614,8 +527,8 @@ void gameengine::play()
             db->updateQuery(query);
             
             //update the local x and y values (remember that they're flipped)
-            localx = logic->y % 6;
-            localy = logic->x % 5;
+            // = logic->y % 6;
+            //localy = logic->x % 5;
             
             //load their game money
             sprintf(query, "SELECT yellow FROM members WHERE id='%d'", id);
@@ -712,19 +625,15 @@ void gameengine::play()
         
         //character's position on the SCREEN versus his position on the game window
         
-        
-        if (localx % 5 == 0 && localx != 0)
-            localx -= 5;
-        if (localy %5 == 0 && localy != 0)
-            localy -= 5;
+        localx = localx % 6;
+        localy = localy % 6;
          
         //draw the character on the screen   
         drawCharacter(logic->character, (localy * BLOCKWIDTH)+BOARDOFFSETX+10, 
                 (localx * BLOCKHEIGHT)+BOARDOFFSETY-(BLOCKHEIGHT*2), 1);
          
-        //old version       
-        //drawCharacter(logic->character, (logic->y * BLOCKWIDTH)+BOARDOFFSETX+10, 
-        //        (logic->x * BLOCKHEIGHT)+BOARDOFFSETY-(BLOCKHEIGHT*2), 1);
+        //check to see if they are standing by a tall block
+        blockOver();
             
         //draw the store on the screen
         draw_sprite(buffer, graphics->storeimg, 10, 285);
@@ -866,11 +775,10 @@ void gameengine::play()
             textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "X: %d", logic->x);
             textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Y: %d", logic->y);
             textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Z: %d", logic->depth);                
-            textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Right: %d", logic->tallBlock(logic->x, logic->y+1, logic->depth));
-            textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Left: %d", logic->tallBlock(logic->x, logic->y-1, logic->depth));
-            textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Up: %d", logic->tallBlock(logic->x-1, logic->y, logic->depth));
-            textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Down: %d", logic->tallBlock(logic->x+1, logic->y, logic->depth));
-
+            textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Localx: %d", localx);
+            textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Localy: %d", localy);
+            textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Block x: %d", logic->selectedblockx);
+            textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Block y: %d", logic->selectedblocky);
         }
         
     }//end debugger is on
@@ -890,16 +798,26 @@ void gameengine::play()
 **************/
 bool gameengine::clickBlock(int x, int y)
 {
-    if (x < BOARDOFFSETX || y < BOARDOFFSETY-BLOCKHEIGHT) //not on the block board
+    //placing a selected block
+    if (logic->selectedblockx != NOBLOCK && logic->selectedblocky != NOBLOCK)
+    {
+        //placeBlock(selectedx, selectedy, movex, movey); 
+        logic->selectedblockx = NOBLOCK;
+        logic->selectedblocky = NOBLOCK;
+        return true;
+    }
+    //selecting a block out of bounds
+    else if (x < BOARDOFFSETX || y < BOARDOFFSETY-BLOCKHEIGHT) //not on the block board
     {
         logic->selectedblockx = logic->selectedblocky = NOBLOCK;  
         return false;
     }
-    
+
+    //selecting a block in bounds
     int newx, newy, xoffset, yoffset;
     newx = newy = 0;
-    xoffset = 80;
-    yoffset = 70;
+    xoffset = BLOCKWIDTH;
+    yoffset = BLOCKHEIGHT;
     
     for (int i = y-BOARDOFFSETY-20; i > 0; i-= yoffset)
         newx++;
@@ -911,6 +829,7 @@ bool gameengine::clickBlock(int x, int y)
     logic->selectedblocky = newy;
     
     return true;
+
 }
 
 /**************
@@ -935,32 +854,33 @@ void gameengine::blockOver()
     int depthamt = 0;
     bool redraw = false;
     
-    switch(logic->depth-3)
+    switch(logic->depth)
     {
-        case 4: depthamt = 180;
+        case 0: depthamt = 180;
             break;
-        case 3: depthamt = 133;
+        case 1: depthamt = 133;
             break;
         case 2: depthamt = 90;
             break;
-        case 1: depthamt = 49;
+        case 3: depthamt = 49;
             break;  
     }
     
-    if (logic->x < 100)
-    {
         //draw the blocks below on top of the character
         //then draw the one underneat that
         // if the one underneat that is tall too, then draw the next one as wel          
-            if (logic->getBlock(logic->x+1, logic->y, logic->depth-1) != NOBLOCK && logic->tallBlock(logic->x+1, logic->y, logic->depth))
+            if (logic->tallBlock(logic->x+1, logic->y, logic->depth))
             {
-                draw_sprite(buffer, graphics->getBlock(logic->getBlock(logic->x+1, logic->y, logic->depth-1)), (BLOCKWIDTH * logic->y)+BOARDOFFSETX, (BLOCKHEIGHT * logic->x+1)+BOARDOFFSETY-depthamt);
-            
-                //blit underneath the block we just drew
-                blit(graphics->boardimg, buffer, (BLOCKWIDTH * logic->y)+BOARDOFFSETX, (BLOCKHEIGHT * logic->x+1)+BOARDOFFSETY-depthamt+15,
-                        (BLOCKWIDTH * logic->y)+BOARDOFFSETX, (BLOCKHEIGHT * logic->x+1)+BOARDOFFSETY-depthamt+15, (logic->y * BLOCKWIDTH)+BOARDOFFSETY+(BLOCKWIDTH*2), (logic->x * BLOCKHEIGHT)+BOARDOFFSETX+(BLOCKHEIGHT*3)-100);
+                BITMAP* temp;
+                temp = create_bitmap(BLOCKWIDTH, BLOCKHEIGHT + 5);
+                clear(temp);
+                
+                blit(graphics->getBlock(logic->getBlock(logic->x+2, logic->y, logic->depth)), temp, 0, 0, 0, 0, BLOCKWIDTH, BLOCKHEIGHT+5);
+                draw_sprite(buffer, graphics->getBlock(logic->getBlock(logic->x+1, logic->y, logic->depth)), (BLOCKWIDTH * localy)+BOARDOFFSETX+10, (BLOCKHEIGHT * localx+1)+BOARDOFFSETY-49);
+                draw_sprite(buffer, temp, (BLOCKWIDTH * localy)+BOARDOFFSETX+10, (BLOCKHEIGHT * localx+2)+BOARDOFFSETY+35);
+           
+                destroy_bitmap(temp);
             }    
-    }
         
 }
  
@@ -975,8 +895,8 @@ void gameengine::blockOver()
 **************/
 void gameengine::buildBoard()
 {
-    //check to see if the board needs to scroll
-    //scrollBoard();
+    if (logic->mode == BUILDMODE)
+        ; //check to see if we need to load different data from the database 
         
     //draw the board for the first time
     drawBuildBoard(logic->x, logic->y);
@@ -992,34 +912,20 @@ void gameengine::buildBoard()
 **************/	
 void gameengine::drawBuildBoard(int xpos, int ypos)
 {
-    int x, y, localx, localy, LOW;
-    
+    int x, y, LOW;
     x = y = 0;
-    localx = xpos;
-    localy = ypos;
     
-/*    if (ypos <= LOW)
-        y = ypos-DRAWBOARDMINOFFSET;
-    if (xpos <= LOW)
-        x = xpos-DRAWBOARDMINOFFSET;
-*/ 
-
-if (localx % 5 != 0)
-    localx -= 5;  
-    
-if (localy % 5 != 0)
-    localy -= 5;
-    
-if (localx < 0)
-    localx = 0;
-    
-if (localy < 0)
-    localy = 0;  
-    
+    //modify the board so it only shows 6 x 6 blocks at a time
+    if (xpos % 6 != 0)
+        xpos -= (xpos % 6);
+        
+    if (ypos % 6 != 0)
+        ypos -= (ypos % 6);  
        
-    for (int i = localx; i < localx+DRAWBOARDMAXOFFSET; i++) //-DRAWBOARDMINOFFSET; i < xpos+DRAWBOARDMAXOFFSET; i++)
+    //draw the blocks on the screen
+    for (int i = xpos; i < xpos+DRAWBOARDMAXOFFSET; i++)
     {
-        for (int j = localy; j < localy+DRAWBOARDMAXOFFSET+1; j++)
+        for (int j = ypos; j < ypos+DRAWBOARDMAXOFFSET+1; j++)
         {
             
             /*if (logic->getBlock(i, j, 3) != NOBLOCK) //BOTTOM BLOCKS (draw these first)
@@ -1029,8 +935,9 @@ if (localy < 0)
                 draw_sprite(buffer, graphics->getBlock(logic->getBlock(i, j, 2)), (BLOCKWIDTH * y)+BOARDOFFSETX+10, (BLOCKHEIGHT * x)+BOARDOFFSETY-50);
             
             if (logic->getBlock(i, j, 1)!= NOBLOCK)
-                draw_sprite(buffer, graphics->getBlock(logic->getBlock(i, j, 1)), (BLOCKWIDTH * y)+BOARDOFFSETX+10, (BLOCKHEIGHT * x)+BOARDOFFSETY-92); 
-            */   
+                draw_sprite(buffer, graphics->getBlock(logic->getBlock(i, j, 1)), (BLOCKWIDTH * y)+BOARDOFFSETX+10, (BLOCKHEIGHT * x)+BOARDOFFSETY-89); 
+            */ 
+              
             if (logic->getBlock(i, j, 0)!= NOBLOCK)
                 draw_sprite(buffer, graphics->getBlock(logic->getBlock(i, j, 0)), (BLOCKWIDTH * y)+BOARDOFFSETX+10, (BLOCKHEIGHT * x)+BOARDOFFSETY-133);
             
@@ -1040,20 +947,17 @@ if (localy < 0)
             
             //TOP BLOCKS (draw these last)
         }
-        if (ypos <= LOW)
-            y = 0;
-        else
-            y = 0;
-            
+        
+        y = 0; 
         x++;
     }
         
-        if (graphics->boardimg == NULL)
+        /*if (graphics->boardimg == NULL)
         {
             //create the graphic
             graphics->boardimg = create_bitmap(GAMEWIDTH, GAMEHEIGHT);
             blit(buffer, graphics->boardimg, 0, 0, 0, 0, GAMEWIDTH, GAMEHEIGHT);            
-        }
+        }*/
     
 }
 
