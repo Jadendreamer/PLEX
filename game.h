@@ -53,17 +53,17 @@
 #define RAMPWEST 28
 
 //gem block type definitions
-#define BLUEGEM 1
-#define YELLOWGEM 2
-#define GREENGEM 3
+#define BLUEGEM 0
+#define YELLOWGEM 1
+#define GREENGEM 2
 
 //character type definitions
-#define ALEX 1
-#define KITTY 2
-#define TANYA 3
-#define LISA 4
-#define RAVEN 5
-#define BELLA 6
+#define ALEX 0
+#define KITTY 1
+#define TANYA 2
+#define LISA 3
+#define RAVEN 4
+#define BELLA 5
 
 //character maximum health
 #define MAXHEALTH 6
@@ -86,7 +86,13 @@
 #include <cmath>
 #include <allegro.h>
 #include <winalleg.h>
+#include <iostream.h>
+#include <fstream.h>
+#include <string>
+#include "map.h"
 #include "mysql/mysql.h"
+
+using namespace std;
 
 class game
 {
@@ -101,21 +107,39 @@ class game
 		void addBlock(int i, int j, int level); //add a block here (type doesn't matter)
 		void addBlock(int i, int j, int level, int type); //put a block here
 		void fillLevel(int level); //fill a story level with blocks
-		void fillArray(int map[SMAP_HEIGHT][SMAP_WIDTH]); //fill story array with blocks
+		void fillArray(int map[SMAP_HEIGHT][SMAP_WIDTH]); //fill story array with 
+		bool tallBlock(int x, int y, int level); //see if there is a tall block under this level
 		
 		//game functions
 		bool gameOver(); //returns true if game is over
-		void loadGame(char filename[]); //load a game from a file
+		int loadGame(char *filename); //load a game from a file
+		bool loadMapFile(char *filename); //load a map from a file
+		bool loadPlayerFile(char *filename); //load player info from a file
+		bool loadNPCFile(char *filename);
+		int saveGame(char *filename); //save a game to a file with
+		                                     //the given filename
+		bool encryptFile(char *filename); //encrypt this file so they can't open it
+		                              //and mess with the data inside
+		bool decryptFile(char *filename); //decrypt an encrypted file
+		char *getMapFile(int currentMap); //returns the filename for the map
+		                                  //they are currently on
+		
+		//parsing functions
+		bool parseSavedFile(char *filename); //figure out saved files for this game
+		bool parseMapFile(char *filename); //load map data into map array
 		
         //game mode functions
 		void setMode(int newmode); //set the game play mode
 		int  getMode(); //returns the game play mode
 		
+		//character movement
+		bool validMove(int x, int y);
+		
 		//build mode related funtions
 		bool checkForFreeSpace(int x, int y, int depth);
 		bool loadBuildBoard(MYSQL_RES *resultquery);
 		
-		//database information
+		//variables
 		int  id; //the id of the member
 		char *name; //their playing name
         int  character; //they character they're playing with
@@ -125,8 +149,20 @@ class game
         int  yellow; //their yellow jewels
         int  blue; //their blue jewels
         int  green; //their green jewels
+        int  selectedblockx; //the x position of the block they clicked on
+        int  selectedblocky; //the y position of the block they clicked on
+        char *playerdata; //data file for player info on load/save of a game
+        char *npcdata; //data file for NPC characters on load/save of a game
+        char *map; //data file for the current game map
+        int  currentMap; //the map they are currently on in story mode
+        int  moves; //number of moves they've made
+        int  health; //their character's health
+        bool over; //set to true if the game is over
+        int  keys; //the number of keys they have
+        int  mode; //the mode they are playing the game in (story/build)  
+        
+        //map *worldmap; //the maps in the game
 		
-	private:
         //story maps
         int storymap4[SMAP_HEIGHT][SMAP_WIDTH]; //highest level of the map
         int storymap3[SMAP_HEIGHT][SMAP_WIDTH]; 
@@ -140,13 +176,6 @@ class game
         int buildmap2[BMAP_HEIGHT][BMAP_WIDTH];
         int buildmap1[BMAP_HEIGHT][BMAP_WIDTH];
         int buildmap0[BMAP_HEIGHT][BMAP_WIDTH]; //bottom level of the map
-        
-        int  location; //the map they are currently on in story mode
-        int  moves; //number of moves they've made
-        int  health; //their character's health
-        bool over; //set to true if the game is over
-        int  keys; //the number of keys they have
-        int  mode; //the mode they are playing the game in
         
 };
 

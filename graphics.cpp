@@ -14,6 +14,7 @@
 gamegraphics::gamegraphics()
 {
     //maybe this will do something later...
+    boardimg = NULL;
 }
 
 /**************

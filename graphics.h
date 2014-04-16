@@ -201,7 +201,10 @@ class gamegraphics
         BITMAP *shadownortheastimg;
         BITMAP *shadownorthwestimg;
         BITMAP *shadowsoutheastimg;
-        BITMAP *shadowsouthwestimg;        
+        BITMAP *shadowsouthwestimg;
+        
+        //screen capture of the board before a character is on it
+        BITMAP *boardimg;
 
 };
 

@@ -1,7 +1,7 @@
 [Project]
 FileName=Plex.dev
 Name=PLEX
-UnitCount=18
+UnitCount=20
 Type=0
 Ver=1
 ObjFiles=
@@ -20,7 +20,7 @@ ObjectOutput=
 OverrideOutput=0
 OverrideOutputName=Plex.exe
 HostApplication=
-Folders="Game Engine","Game Engine/Database Files","Game Engine/Game Files","Game Engine/Graphic Files","Game Engine/Menu Files","Game Engine/Movie Files","Game Engine/Music Files","Game Engine/Timer Files"
+Folders="Game Engine","Game Engine/Database Files","Game Engine/Game Files","Game Engine/Graphic Files","Game Engine/Map Files","Game Engine/Menu Files","Game Engine/Movie Files","Game Engine/Music Files","Game Engine/Timer Files"
 CommandLine=
 UseCustomMakefile=0
 CustomMakefile=
@@ -221,6 +221,26 @@ BuildCmd=
 FileName=oldstuff.cpp
 CompileCpp=1
 Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit19]
+FileName=map.h
+CompileCpp=1
+Folder=Game Engine/Map Files
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit20]
+FileName=map.cpp
+CompileCpp=1
+Folder=Game Engine/Map Files
 Compile=1
 Link=1
 Priority=1000

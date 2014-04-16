@@ -14,6 +14,7 @@
 #include <winalleg.h> //override windows info
 #include <process.h>
 #include <string.h>
+#include "map.h" //map files
 #include "graphics.h" //graphic files
 #include "music.h" //music files
 //#include "timer.h" //game timer files
@@ -26,6 +27,18 @@
 #define GAMEWIDTH 800
 #define GAMEHEIGHT 600
 
+#define DRAWBOARDMINOFFSET 3 //the minimum offset when the board blocks are
+                             //drawn to the screen in drawBuildBoard
+#define DRAWBOARDMAXOFFSET 6 //the maxium offset when the board blocks are
+                             //drawn to the screen in drawBuildBoard
+                             
+//offset the build board on the screen
+#define BOARDOFFSETX 170
+#define BOARDOFFSETY 180
+                             
+#define SCALEDOWN 1.68 //the amount to scale down character images 
+                       //on the side bar
+
 class gameengine
 {
 	public:
@@ -35,6 +48,7 @@ class gameengine
 		//Game related functions
 		BITMAP *draw(); //draw the buffer to the screen
 		bool   loading(); //load the game graphics
+		void   scrollBoard(); //scroll the screen
 		bool   exitEngine(); //destroy the game graphics
 		
 		//input handling
@@ -75,12 +89,23 @@ class gameengine
 		bool unmute(); //turn mute off
 		bool stopMusic(int num); //stop whatever music is playing
 		
+		//Block related functions
+		bool clickBlock(int x, int y); //figure out which block they are clicking on
+		                               //from given mouse x and y position
+		bool characterOnBlock(int x, int y); //return false if there isn't a character on this block
+		
 		//Graphic related options
         bool mouse(bool show); //show the mouse (or not)
         bool getMouse(); //return the status of the mouse (on or off)
         bool clearScreen(); //clear the screen
-        void drawCharacter(int id, int x, int y); //draw a character
+        void drawCharacter(int id, int x, int y, float scale); //draw a character
         void drawBuildBoard(int x, int y); //draw the board on the screen
+        bool calculateBlitPosition(int dir); //figure out how big of an area to blit
+        void blockOver(); //draw block over the character if they are behind a tall block
+        
+        //Build mode related options
+        void buildBoard(); //update board database info the board as the
+                           //player moves around the screen
         
         //Database related options
         int  connect(char *host, char *db, char *user, char *pass);
@@ -101,7 +126,19 @@ class gameengine
         bool mouseShow; //mouse visibility
         bool dbConnection; //database connection status
         int  error; //error code
+        bool scrolling; //scrolling the screen
+        int  scrollmax; //scrolling incrementer
+        int  localx; //x position on the smaller screen
+        int  localy; //y position on the smaller screen
         int  id; //database member id
+        
+        //dynamic constant values used to blit
+        //over the old character image on the game
+        //board
+        int TOPX;
+        int TOPY;
+        int BOTTOMX;
+        int BOTTOMY;
         
         //objects used in the game
         gamemenu     *menu;

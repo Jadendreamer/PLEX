@@ -17,9 +17,14 @@ game::game()
     over = false; //game isn't over yet
     moves = 0; //haven't made any moves yet
     keys = 0; //no keys yet
-    mode = CHARACTERMODE; //default to story mod
+    mode = CHARACTERMODE; //default to story mode
     character = 0; //haven't picked one yet
     health = MAXHEALTH; //set it all the way up
+    selectedblockx = NOBLOCK;
+    selectedblocky = NOBLOCK;
+    
+    //create the game map object
+    //worldmap = new map();
     
     //clear the story map so its empty
     for (int i = 0; i < SMAP_HEIGHT; i++)
@@ -135,7 +140,7 @@ void game::gravity()
                     storymap0[i][j] = storymap1[i][j];
                     storymap1[i][j] = NOBLOCK;
                 }
-        }
+            } //end for
      
      //build map   
      for (int x = 0; x < MAPLEVELS; x++)
@@ -166,8 +171,8 @@ void game::gravity()
                     buildmap0[i][j] = buildmap1[i][j];
                     buildmap1[i][j] = NOBLOCK;
                 }
-        }   
-}
+            } //end for 
+} //end function
 
 /***********
 * Purpose: randomly fill the map
@@ -379,11 +384,34 @@ bool game::gameOver()
 }
 
 /***********
+* Purpose: check to see if they're making a valid move
+* Precondition: value of 1 in newx adds to the x coordinate, -1 subtracts
+*               value of 1 in newy adds to the y coordinate, -1 subtracts
+* Postcondition: returns true if they can move there
+***********/
+bool game::validMove(int newx, int newy)
+{
+    int localx, localy;
+    
+    localx = x + newx;
+    localy = y + newy;
+    
+    //there is a tall block there
+    if (tallBlock(localx, localy, depth))
+        return 0;     
+        
+    if (getBlock(localx, localy, depth) == NOBLOCK)
+        return 0;
+        
+    return 1;
+}
+
+/***********
 * Purpose: see if there is space for the character to stand here
 * Precondition: x and y position, depth of the character
 * Postcondition: returns true if character can start on the board here
 ***********/
-bool game::checkForFreeSpace(int xpos, int ypos, int depth)
+bool game::checkForFreeSpace(int xpos, int ypos, int xdepth)
 {
     
     if (xpos < x-3 || xpos > x+3)
@@ -392,12 +420,12 @@ bool game::checkForFreeSpace(int xpos, int ypos, int depth)
     if (ypos < y-3 || ypos > y+3)
         return 0;
 
-    switch (depth)
+    switch (xdepth)
     {
         case 4:
-            if (buildmap4[xpos][ypos] != NOBLOCK)
-                checkForFreeSpace(xpos+1, ypos+1, depth);
-            else
+            if (buildmap4[xpos][ypos] != NOBLOCK && !tallBlock(xpos, ypos, xdepth))
+                checkForFreeSpace(xpos+1, ypos+1, xdepth);
+            else 
             {
                 x = xpos;
                 y = ypos;
@@ -407,8 +435,8 @@ bool game::checkForFreeSpace(int xpos, int ypos, int depth)
             break;
             
         case 3:
-            if (buildmap3[xpos][ypos] != NOBLOCK) //move up one level
-                checkForFreeSpace(xpos, ypos, ++depth);
+            if (buildmap3[xpos][ypos] != NOBLOCK && !tallBlock(xpos, ypos, xdepth)) //move up one level
+                return checkForFreeSpace(xpos, ypos, ++xdepth);
             else
             {
                 x = xpos;
@@ -419,8 +447,8 @@ bool game::checkForFreeSpace(int xpos, int ypos, int depth)
             break;
             
         case 2:
-            if (buildmap2[xpos][ypos] != NOBLOCK) //move up one level
-                checkForFreeSpace(xpos, ypos, ++depth);
+            if (buildmap2[xpos][ypos] != NOBLOCK && !tallBlock(xpos, ypos, xdepth)) //move up one level
+                return checkForFreeSpace(xpos, ypos, ++xdepth);
             else
             {
                 x = xpos;
@@ -431,19 +459,19 @@ bool game::checkForFreeSpace(int xpos, int ypos, int depth)
             break;
             
         case 1:
-            if (buildmap1[xpos][ypos] != NOBLOCK) //move up one level
-                checkForFreeSpace(xpos, ypos, ++depth);
+            if (buildmap1[xpos][ypos] != NOBLOCK && !tallBlock(xpos, ypos, xdepth)) //move up one level
+                return checkForFreeSpace(xpos, ypos, ++xdepth);
             else
             {
                 x = xpos;
                 y = ypos;
-                depth = 4;
+                depth = 1;
                 return 1;
             }
             break;
             
         case 0: //they've fallen through the board, move them up a level
-                checkForFreeSpace(x, y, 4);
+                return checkForFreeSpace(x, y, 4);
             break;    
     }
 }
@@ -486,5 +514,401 @@ bool game::loadBuildBoard(MYSQL_RES *resultquery)
         } //end switch 
     } //end while
     
+}
+
+/***********
+* Purpose: load this player's saved game
+* Precondition: game file has been decrpted
+* Postcondition: saved game has been restored
+***********/
+int game::loadGame(char *filename)
+{
+    int error = 0;
+    
+    //decrypt all files before loading them
+    
+    //redirect it to go here no matter what
+    filename = "saved/testsave.plex";
+    
+    if (!filename) //invalid game file
+        error = 102;
+    
+    //parse out the information
+    error = parseSavedFile(filename);
+    
+    if (error) //error reading saved file
+        return 103;
+        
+    //load the player file
+    //error = loadPlayerFile(playerdata);
+    
+    if (error) //error reading player file
+        return 104;
+    
+    //load the map file depending on where they currently are
+    //error = loadMapFile(getMapFile(currentmap));
+    
+    if (error) //error reading map file
+        return 105;
+    
+    //load the NPC file
+    //error = loadNPCFile(npcdata);
+    
+    if (error) //error reading npc file
+        return 106;
+    
+    //game has finished loading
+    return true;
+}
+
+/***********
+* Purpose: load the current map from a file
+* Precondition: map file is decrypted
+* Postcondition: map file has been loaded into the story map
+***********/
+bool game::loadMapFile(char *filename)
+{
+    //parse out the information from the file
+    //and load it into the story map   
+    
+    //encrypt this file
+    
+    //load complete
+    return true;
+}
+
+/***********
+* Purpose: load player information into the game
+* Precondition: player file is decrypted
+* Postcondition: all the player information and game variables have 
+*                been reset to their former position
+***********/
+bool game::loadPlayerFile(char *filename)
+{
+    //parse out the information from the file
+    //and load it into the game, restoring variables
+    //to their previous state
+    
+    //encrypt this file
+    
+    //load complete
+    return true;
+}
+
+/***********
+* Purpose: load NPC information into the game
+* Precondition: NPC file is decrypted
+* Postcondition: returns true if there is a tall block there, otherwise false
+***********/
+bool game::loadNPCFile(char *filename)
+{
+    //parse out information from the file
+    //and load it into the game, restoring NPC
+    //characters to their previous state
+    
+    //encrypt this file
+    
+    //load complete
+    return true;
+}
+
+/***********
+* Purpose: save the current game state
+* Precondition: filename is valid
+* Postcondition: all game state information has been saved
+***********/
+int game::saveGame(char *filename)
+{
+    //try to create this file
+    
+    //create the map files
+    
+    //create the player file
+    
+    //create the NPC file
+    
+    //encrypt all files
+    
+    //save complete
+    return true;
+}
+
+/***********
+* Purpose: encrypt file information
+* Precondition: filename is valid
+* Postcondition: file has been encrypted
+***********/
+bool game::encryptFile(char *filename)
+{
+   //encrypt this file
+   
+   //finished
+   return true; 
+}
+
+/***********
+* Purpose: decrypt file information
+* Precondition: filename is valid
+* Postcondition: file has been decrypted
+***********/
+bool game::decryptFile(char *filename)
+{
+    //decrypt this file
+    
+    //finished
+}
+
+/***********
+* Purpose: return the filename for the data of the map the character is on
+* Precondition: current map is valid
+* Postcondition: maps filename is returned
+***********/
+char *game::getMapFile(int currentMap)
+{
+    //this may change if I make a map class!!!
+    //(which i probably should, urrgh)
+    switch(currentMap)
+    {
+        /*case 0: return map->landslide;
+            break;
+        case 1: return map->waterville;
+            break;
+        case 2: return map->haymarket;
+            break;
+        case 3: return map->stonecastle;
+            break;
+        case 4: return map->mercyvalley;
+            break;
+        case 5: return map->fuzzyland;
+            break;
+        case 6: return map->wishingwellfalls;
+            break;
+        case 7: return map->bouldercanyon;
+            break;
+        case 8: return map->merryfield;
+            break;
+        case 9: return map->ashcanyon;
+            break;
+        case 10: return map->buildersguild;
+            break;*/
+    }
+    
+}
+
+/***********
+* Purpose: parse a story map file
+* Precondition: file is valid and decrypted
+* Postcondition: map has been loaded into the story map array
+***********/
+bool game::parseMapFile(char *filename)
+{
+    ifstream file;
+    char name[255], peek, block[2], x[3], y[3], z[3];
+    
+    file.open(filename);
+    
+    if (!file) //could not open the file
+        return false;
+    
+    while (!file.eof())
+    {
+        file.get(x, 3, ','); //get first coordinate
+        file.ignore();
+        file.get(y, 3, ','); //get second coordinate
+        file.ignore();
+        file.get(z, 3, '\t'); //get third coordinate
+ 
+        file.ignore();     
+        file.get(block, 2, '\n'); //get the block
+        file.ignore();
+        
+        int newz = atoi(z);
+        int newx = atoi(x);
+        int newy = atoi(y);
+        int newblock;
+        
+        if (block[0] == '-') //no block in that spot
+            newblock = -1;
+        else
+            newblock = atoi(block);
+        
+        //covert coordinates to integers
+        //fill the map array
+        switch (newz)
+        {
+            
+            case 0: storymap0[newx][newy] = newblock;
+                break;
+            case 1: storymap1[newx][newy] = newblock;
+                break;
+            case 2: storymap2[newx][newy] = newblock;
+                break;
+            case 3: storymap3[newx][newy] = newblock;
+                break;
+            case 4: storymap4[newx][newy] = newblock;
+                break;
+            default: 
+                break;
+        }
+    }
+        
+    return true;
+}
+
+/***********
+* Purpose: parse a saved game file
+* Precondition: file is valid and decrypted
+* Postcondition: saved game file data has been loaded
+***********/
+bool game::parseSavedFile(char *filename)
+{
+    //parse out filenames from the gamefile
+    ifstream file;
+    char name[255];
+    char delim[10];
+    char value[255];
+    char peek;
+    string token[14] = {"playerdata", "npcdata", "landslide", "waterville",
+                       "haymarket", "stonecastle", "mercyvalley", "fuzzyland",
+                       "wishingwellfalls", "bouldercanyon", "merryfield",
+                       "ashcanyon", "buildersguild"};
+    int i = 0;
+    
+    file.open(filename);
+    
+    if (!file)
+        return false;
+        
+    while (!file.eof())
+    {
+        file.get(name, 255, ' '); //pull off info to the first space
+            
+        if (!token[i].compare(name)) //matching value
+        {
+            
+            peek = file.peek();
+            if (peek == ' ')
+                file.ignore(); //ignore white space
+                
+            file.get(delim, 10, ' '); //get more data up to next white space
+            
+            peek = file.peek();
+            if (peek == ' ') //ignore white space
+                file.ignore();
+                
+            file.get(value, 255); //the rest of the info
+            
+            peek = file.peek();
+            if (peek == '\n')
+                file.ignore();
+            
+            if (i == 0) //player data variable
+                strcpy(playerdata, value);
+            if (i == 1) //npc data variable
+                strcpy(npcdata, value);
+            /*if (i == 3)
+                strcpy(map->landslide, value);
+            if (i == 4)
+                strcpy(map->waterville, value);
+            if (i == 5)
+                strcpy(map->haymarket, value);
+            if (i == 6)
+                strcpy(map->stonecastle, value);
+            if (i == 7)
+                strcpy(map->mercyvalley, value);
+            if (i == 8)
+                strcpy(map->fuzzyland, value);
+            if (i == 9)
+                strcpy(map->wishingwellfalls, value);
+            if (i == 10)
+                strcpy(map->bouldercanyon, value);
+            if (i == 11)
+                strcpy(map->merryfield, value);
+            if (i == 12)
+                strcpy(map->ashcanyon, value);
+            if (i == 13)
+                strcpy(map->buildersguild, value);   
+                */
+        }
+        else
+            return false; //token not found
+            
+        i++;
+        
+    }
+     
+     return true;
+}
+
+/***********
+* Purpose: check to see if there is a tall block under this spot
+* Precondition: the level to check under, the x and y position of the block
+* Postcondition: returns true if there is a tall block there, otherwise false
+***********/
+bool game::tallBlock(int x, int y, int level)
+{
+    if (mode == BUILDMODE)
+    {
+        switch (level)
+        {
+        
+            case 4: if (buildmap3[x][y] == THOUSE || buildmap3[x][y] == TSTONE)
+                        return true;
+                    else
+                        return false;
+                    break;
+            
+            case 3: if (buildmap2[x][y] == THOUSE || buildmap2[x][y] == TSTONE)
+                        return true;
+                    else
+                        return false;
+                    break;  
+                    
+            case 2: if (buildmap1[x][y] == THOUSE || buildmap1[x][y] == TSTONE)
+                        return true;
+                    else
+                        return false;
+                    break;
+            case 1: if (buildmap0[x][y] == THOUSE || buildmap0[x][y] == TSTONE)
+                        return true;
+                    else
+                        return false;
+                    break;
+            case 0:
+                    return false;
+                    break;
+        }  
+    }
+    else //storymode
+    {
+        switch (level)
+        {
+            case 4: if (storymap3[x][y] == THOUSE || storymap3[x][y] == TSTONE)
+                        return true;
+                    else
+                        return false;
+                    break;
+            
+            case 3: if (storymap2[x][y] == THOUSE || storymap2[x][y] == TSTONE)
+                        return true;
+                    else
+                        return false;
+                    break;  
+                    
+            case 2: if (storymap1[x][y] == THOUSE || storymap1[x][y] == TSTONE)
+                        return true;
+                    else
+                        return false;
+                    break;
+            case 1: if (storymap0[x][y] == THOUSE || storymap0[x][y] == TSTONE)
+                        return true;
+                    else
+                        return false;
+                    break;
+            case 0:
+                    return false;
+                    break;
+        }
+    } 
 }
 
