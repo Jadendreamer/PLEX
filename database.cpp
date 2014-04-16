@@ -25,7 +25,7 @@ database::database()
 * Precondition: host, database, user name and password
 * Postcondition: connected to that database
 **************/
-int database::openconnection(char *host, char *db, char *user, char *pass)
+int database::openConnection(char *host, char *db, char *user, char *pass)
 {
     if (sock) //already connected to another database
         disconnect(); //disconnect from that one
@@ -53,12 +53,13 @@ int database::openconnection(char *host, char *db, char *user, char *pass)
 bool database::disconnect()
 {
     if (sock) //they have a socket open
-    {
         mysql_close(sock);
-        return true;
-    }
     
-    return true; //already disconnected
+    //release result data
+    free(); 
+    
+    //database disconnected
+    return true; 
 }
 
 /**************
@@ -74,7 +75,7 @@ bool database::free()
         return true;
     }
     
-    return true;
+    return false;
 }
 
 /**************
@@ -101,5 +102,122 @@ char *dberror(int errorcode)
             break;
     }
     
-    return ""; //no error, return null char
+    return NULL; //no error, return null char
+}
+
+/**************
+* Purpose: return the result set of the query
+* Precondition: the query string
+* Postcondition: result set returned (or null)
+**************/
+MYSQL_RES *database::query(char *query)
+{        
+    //query the database
+    mysql_query(sock, query);
+    
+    //store the results
+    result = mysql_store_result(sock);
+    
+    return result;
+    
+}
+
+/**************
+* Purpose: update the database no result returned
+* Precondition: the query string
+* Postcondition: false if failed, true if suceess
+**************/
+bool database::updateQuery(char *query)
+{        
+    if (!mysql_query(sock, query))
+        return 0; //failed query
+    else
+        return 1; //successful query
+}
+
+/**************
+* Purpose: return the result set of the query
+* Precondition: the query string
+* Postcondition: the FIRST result is returned (or null)
+*                will not return multiple rows, only the first
+**************/
+char *database::stringQuery(char *query)
+{
+    //if old results exist, free them
+    //free();
+        
+    //query the database
+    mysql_query(sock,query);
+    
+    //store the results
+    result = mysql_store_result(sock);
+    
+    if (!result)
+        return NULL; //no results
+    
+    //fetch the row
+    row = mysql_fetch_row(result);
+    
+    //store the result & convert it to a number
+    char *stringResult = row[0];
+    
+    //free the results
+    free();
+    
+    return stringResult;
+    
+}
+
+/**************
+* Purpose: return the result set of the query
+* Precondition: the query string
+* Postcondition: the FIRST result is returned (or null)
+*                will not return multiple rows, only the first
+**************/
+int database::intQuery(char *query)
+{        
+    //query the database
+    mysql_query(sock,query);
+    
+    //store the results
+    result = mysql_store_result(sock);
+    
+    if (!result)
+        return -1; //no results
+    
+    //fetch the row
+    row = mysql_fetch_row(result);
+    
+    //store the result & convert it to a number
+    int id = atoi(row[0]);
+    
+    //free the results
+    free();
+    
+    return id; //return the id number
+    
+}
+
+/**************
+* Purpose: return the result set of the query
+* Precondition: the query string
+* Postcondition: the FIRST result is returned (or null)
+*                will not return multiple rows, only the first
+**************/
+bool database::boolQuery(char *query)
+{
+    //if old results exist, free them
+    //free();
+        
+    //query the database
+    mysql_query(sock, query);
+    
+    //store the results
+    result = mysql_store_result(sock);
+    
+    //fetch the row
+    //row = mysql_fetch_row(result);
+    
+    return (bool)row[0];
+    
 }

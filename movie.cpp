@@ -11,3 +11,8 @@ gamemovie::gamemovie()
 {
     
 }
+
+bool gamemovie::loadMovies()
+{
+    return 0;   
+}

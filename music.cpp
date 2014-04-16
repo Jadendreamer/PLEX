@@ -10,3 +10,8 @@ gamemusic::gamemusic()
 {
     
 }
+
+bool gamemusic::loadMusic()
+{
+    return 0; 
+}

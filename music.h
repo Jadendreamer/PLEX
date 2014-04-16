@@ -14,7 +14,10 @@
 class gamemusic
 {
 	public:
-		gamemusic(); // class constructor
+        //class constructor
+		gamemusic(); 
+		
+		bool loadMusic(); //load the game music
 		
 	private:
 

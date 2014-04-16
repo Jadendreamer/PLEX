@@ -14,11 +14,13 @@
 class gamemovie
 {
 	public:
-		gamemovie(); // class constructor
+        //class constructor
+		gamemovie(); 
+		
+		bool loadMovies();
 		
 	private:
 
-        
 };
 
 #endif

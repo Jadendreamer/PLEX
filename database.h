@@ -18,21 +18,32 @@
 #define ERR201 201
 #define ERR202 202
 #define ERR203 203
-#define MAX_QUERY_LEN 255
+#define MAX_QUERY_LEN 500
 
 class database
 {
 	public:
-		database(); // class constructor
-		int openconnection(char *host, char *db, char *user, char *pass); //connect to the database
-		bool disconnect(); //disconnect from the database
-		MYSQL_RES *query(char *query); //query the database
-		bool free(); //free the query result
+        //class constructor
+		database(); 
+		
+		//connection & disconnect
+		int       openConnection(char *host, char *db, char *user, char *pass); //connect to the database
+		bool      disconnect(); //disconnect from the database
+		
+		//querying
+		MYSQL_RES *query(char *query); //return result set
+		char      *stringQuery(char *query); //return string
+		int       intQuery(char *query); //return an integer
+		bool      boolQuery(char *query); //return a boolean
+		bool      updateQuery(char *query); //updates, returns true if update went through
+		
+		//free the query results
+        bool free();
 		
 	private:
         MYSQL *sock;
         MYSQL_RES *result;
-        MYSQL_ROW *row;
+        MYSQL_ROW row;
         MYSQL_FIELD *field;
         char *qbuf[MAX_QUERY_LEN];
 };

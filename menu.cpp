@@ -21,7 +21,7 @@ gamemenu::gamemenu()
 * Precondition: width and height of the images
 * Postcondition: returns true once all graphics are loaded
 **************/
-bool gamemenu::loadgraphics(int width, int height)
+bool gamemenu::loadGraphics(int width, int height)
 {
     //loading the game graphics
     loading = graphics->blitBigger(load_bitmap(LOADINGIMAGE, NULL), width/6, height/6, width, height);
@@ -191,7 +191,7 @@ BITMAP *gamemenu::getScreen(int num)
 * Precondition: images already exist
 * Postcondition: memory is released
 **************/
-void gamemenu::destorygraphics()
+void gamemenu::destoryGraphics()
 {
     destroy_bitmap(loading);
     destroy_bitmap(newload);
