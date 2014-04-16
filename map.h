@@ -23,7 +23,6 @@
 #include <winalleg.h> //override windows info
 #include <string.h>
 
-
 class map
 {
     public:

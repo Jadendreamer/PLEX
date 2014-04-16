@@ -8,60 +8,60 @@
 #ifndef GAME_H
 #define GAME_H
 
-//define playing mode
-#define CHARACTERMODE 0
-#define STORYMODE 1
-#define TUTORIALMODE 
-#define BUILDMODE 3
+//define playing modes
+#define CHARACTERMODE 0 //picking a character
+#define STORYMODE     1 //playing game in story mode
+#define TUTORIALMODE  2 //taking the game tutorial
+#define BUILDMODE     3 //playing game in online-multiplayer mode
 
 //normal block type definitions
-#define WOOD 9
-#define WATER 8
-#define THOUSE 7
-#define HOUSE 6
-#define TSTONE 5
-#define STONE 4
-#define GRAY 3
-#define GRASS 2
-#define DIRT 1
-#define BROWN 0
+#define WOOD     9
+#define WATER    8
+#define THOUSE   7
+#define HOUSE    6
+#define TSTONE   5
+#define STONE    4
+#define GRAY     3
+#define GRASS    2
+#define DIRT     1
+#define BROWN    0
 #define NOBLOCK -1
 
 //house block type definitions
-#define WINDOW 10
-#define CLOSEDDOOR 11
-#define OPENDOOR 12
-#define ROOFNORTH 13
+#define WINDOW        10
+#define CLOSEDDOOR    11
+#define OPENDOOR      12
+#define ROOFNORTH     13
 #define ROOFNORTHEAST 14
-#define ROOFEAST 15
+#define ROOFEAST      15
 #define ROOFSOUTHEAST 16
-#define ROOFSOUTH 17
+#define ROOFSOUTH     17
 #define ROOFSOUTHWEST 18
-#define ROOFWEST 19
+#define ROOFWEST      19
 #define ROOFNORTHWEST 20
 
 //landscape block type definitions
 #define TALLTREE 21
-#define SHRUB 22
-#define BUSH 23
-#define ROCK 24
+#define SHRUB    22
+#define BUSH     23
+#define ROCK     24
 
 //ramp block type definitions
 #define RAMPNORTH 25
 #define RAMPSOUTH 26
-#define RAMPEAST 27
-#define RAMPWEST 28
+#define RAMPEAST  27
+#define RAMPWEST  28
 
 //gem block type definitions
-#define BLUEGEM 0
+#define BLUEGEM   0 
 #define YELLOWGEM 1
-#define GREENGEM 2
+#define GREENGEM  2
 
 //character type definitions
-#define ALEX 0
+#define ALEX  0
 #define KITTY 1
 #define TANYA 2
-#define LISA 3
+#define LISA  3
 #define RAVEN 4
 #define BELLA 5
 
@@ -69,17 +69,17 @@
 #define MAXHEALTH 6
 
 //size of story map dimensions (always 5 deep)
-#define SMAP_HEIGHT 4 //down
-#define SMAP_WIDTH 8 //across
+#define SMAP_HEIGHT 10 //down
+#define SMAP_WIDTH  14 //across
 
 //size of build map dimensions (always 5 deep)
 #define BMAP_HEIGHT 100 //down
-#define BMAP_WIDTH 100 //across
+#define BMAP_WIDTH  100 //across
 
 //block info
-#define BLOCKWIDTH 101
+#define BLOCKWIDTH  101
 #define BLOCKHEIGHT 85
-#define MAPLEVELS 5
+#define MAPLEVELS   5
 
 //included files
 #include <cstdlib>
@@ -109,6 +109,8 @@ class game
 		void fillLevel(int level); //fill a story level with blocks
 		void fillArray(int map[SMAP_HEIGHT][SMAP_WIDTH]); //fill story array with 
 		int tallBlock(int x, int y, int level); //see if there is a tall block under this level
+		int waterBlock(int x, int y, int level); //see if there is a water block in this position
+		int noBlock(int x, int y, int level); //see if there is a water block in this position
 		
 		//game functions
 		bool gameOver(); //returns true if game is over
@@ -132,8 +134,10 @@ class game
 		void setMode(int newmode); //set the game play mode
 		int  getMode(); //returns the game play mode
 		
-		//character movement
+		//character & block movement
 		bool validMove(int x, int y);
+		bool placeBlock(int newx, int newy); 
+		bool characterOnBlock(); //return false if there isn't a character on this block
 		
 		//build mode related funtions
 		bool checkForFreeSpace(int x, int y, int depth);

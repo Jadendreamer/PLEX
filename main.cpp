@@ -71,6 +71,7 @@ char name[32]; //build login name
 char pass[32]; //build login password
 gameengine *plex; //game engine
 BITMAP *buffer; //game doublebuffering
+SAMPLE *theme;
 
 /***********
 * Purpose: check the login from the GUI login button
@@ -349,6 +350,7 @@ void init()
 	install_timer();
 	install_keyboard();
 	install_mouse();
+	install_sound(DIGI_AUTODETECT, MIDI_NONE, NULL);
 	
 	//setup the GUI dialog colors
     gui_fg_color = makecol(255, 255, 255); //white text

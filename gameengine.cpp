@@ -32,11 +32,9 @@ gameengine::gameengine(BITMAP *gbuffer)
     scrollmax = 0; //scrolling increment value
     id = 0; //database member id
     
-    //set the blitting defaults
-    TOPX = 0;
-    TOPY = 0;
-    BOTTOMX = 0;
-    BOTTOMY = 0;
+    //set the mouse block selector defaults
+    mousex = 0;
+    mousey = 0;
         
     //create the buffer
     buffer = gbuffer;
@@ -79,6 +77,9 @@ bool gameengine::loading()
 **************/
 BITMAP *gameengine::draw()
 {
+    //get rid of freezing problem
+    Sleep(3);
+    
     //short and so sweet
     return buffer;
 }
@@ -92,10 +93,12 @@ void gameengine::input()
 {
     if (!scrolling) //not scrolling the screen
     {               //so taking input is okay
-    
+
         keyInput(); //respond to keyboard input
         mouseInput(); //respond to mouse input 
         
+        if (logic->getMode() == STORYMODE || logic->getMode() == BUILDMODE)
+            caluclateMouseBlock(); //figure out where mouse is to display the selector
     }
     
     exitError(); //exit if there was an error
@@ -108,7 +111,9 @@ void gameengine::input()
 **************/
 void gameengine::keyInput()
 {
-    
+    //used for checking bounds
+    int max = 10;
+       
     /**********
     * QUITTING THE GAME
     *
@@ -133,6 +138,19 @@ void gameengine::keyInput()
     **********/
     if (key[KEY_F6])
         debug(!debugger);
+        
+    if (key[KEY_F2] && !F2Pressed)
+    {
+        music->sound = !music->sound;
+        
+        //turn music off if its playing
+        if (!music->sound)
+            music->stop();
+        else
+            music->playing = false;
+            
+        F2Pressed = true;
+    }
     
     /**********
     * MENUS
@@ -172,9 +190,10 @@ void gameengine::keyInput()
                 //hit enter on story mode
                 //!!this must be above the other one or it shows when the screen is swapped!!  
                 if (menu->currentScreen() == GAMEMODESCREEN)
+                {
                     setMode(STORYMODE);
-                    //menu->setScreen(NOMENU); //show the pick character screen
-                    //alert("PLEX", NULL, "unimplemented feature", "&Ok", NULL, 'y', NULL);
+                    music->playing = false;
+                }
                     
                 //hit enter on start a new game
                 if (menu->currentScreen() == NEWGAMESCREEN)
@@ -216,7 +235,7 @@ void gameengine::keyInput()
     } //end picking a menu
     
     /**********
-    * BUILD MODE
+    * BUILD MODE OR STORY MODE
     *
     * they are playing in build mode
     **********/
@@ -231,8 +250,8 @@ void gameengine::keyInput()
                 //increment position of the character        
                 if (logic->validMove(-1, 0)) 
                     logic->x--;
-                else
-                    ; //play error sound
+                else //play error sound
+                    music->play(ERRORMOVE, 255, 128, 1000, 0); 
   
             } //end within entire map bounds
             
@@ -242,14 +261,19 @@ void gameengine::keyInput()
         
         if (key[KEY_DOWN] && !downPressed) //moving down
         {
-            if (logic->x < 100)
+            //if (logic->getMode() == STORYMODE)
+            //    max = SMAP_HEIGHT;
+            //else
+            //    max = BMAP_HEIGHT;
+                
+            if (logic->x < max)
             {
       
                 //increment position of the character
                 if (logic->validMove(1, 0))
                     logic->x++;                
                 else //play error sound
-                    ;
+                    music->play(ERRORMOVE, 255, 128, 1000, 0);
                     
             } //end within entire map bounds
             
@@ -266,8 +290,8 @@ void gameengine::keyInput()
                 //increment position of the character
                 if (logic->validMove(0, -1))
                     logic->y--;
-                else
-                    ; //play error sound
+                else //play error sound
+                    music->play(ERRORMOVE, 255, 128, 1000, 0);
                 
             } //end within entire map bounds
             
@@ -277,14 +301,18 @@ void gameengine::keyInput()
         
         if (key[KEY_RIGHT] && !rightPressed) //moving right
         {
-            if (logic->y < 100)
-            {
+            //if (logic->getMode() == STORYMODE)
+            //    max = SMAP_WIDTH;
+            //else
+            //    max = BMAP_WIDTH;
                 
+            if (logic->y < max)
+            {
                 //increment position of the character
                 if (logic->validMove(0, 1))
                     logic->y++;
                 else //play error sound
-                    ;
+                    music->play(ERRORMOVE, 255, 128, 1000, 0);
                     
             } //end within entire map bounds
             
@@ -309,6 +337,9 @@ void gameengine::keyInput()
         
     if (!key[KEY_LEFT])
         leftPressed = false;
+        
+    if (!key[KEY_F2])
+        F2Pressed = false;
 }
 
 /**************
@@ -364,8 +395,10 @@ void gameengine::mouseInput()
                 
                 //clicked on story mode
                 if (menu->currentScreen() == GAMEMODESCREEN)
+                {
                     setMode(STORYMODE);
-                    //alert("PLEX", NULL, "unimplemented feature", "&Ok", NULL, 'y', NULL);
+                    music->playing = false;
+                }
                     
                 //clicked on start a new game
                 if (menu->currentScreen() == NEWGAMESCREEN)
@@ -419,7 +452,7 @@ void gameengine::mouseInput()
         // left click
         if ((mouse_b & 1) && lmPressed == false)
         {
-            //textprintf_ex(buffer, font, 200, 200, makecol(255, 255, 255), 0, "Clicked");
+            
             /**********************
             * UNIMPLEMENTED FEATURE
             *
@@ -466,6 +499,57 @@ void gameengine::mouseInput()
 }
 
 /**************
+* Purpose: show the selector on the screen
+* Precondition: mouse x and y coordinates have been calculated (mousex, mousey)
+* Postcondition: selector is drawn on the screen
+**************/
+void gameengine::drawSelector()
+{
+    int depthoffset = 0;
+    int blockx, blocky;
+    
+    //figure out where they are based on position in the entire map
+    blockx = mousex;
+    blocky = mousey;
+    
+    if (logic->x > 5)
+        blockx += logic->x;
+        
+    if (logic->y > 5)
+        blocky += logic->y;       
+    
+    //figure out the depth to draw the selector based on blocks being there
+    if (logic->getBlock(blockx, blocky, 0) == NOBLOCK)
+        depthoffset = 43;
+     
+    //draw the selector
+    blit(graphics->selectimg, buffer, 0, 0, (mousey * BLOCKWIDTH)+BOARDOFFSETX+10, 
+        (mousex * BLOCKHEIGHT)+BOARDOFFSETY-(BLOCKHEIGHT)+depthoffset, BLOCKWIDTH, BLOCKHEIGHT);
+}
+
+/**************
+* Purpose: calculate the x and y position of the block the mouse is on
+* Precondition: none
+* Postcondition: mousex holds block x position, mousey holds block y position
+**************/
+void gameengine::caluclateMouseBlock()
+{
+      //selecting a block in bounds
+    int newx, newy, xoffset, yoffset, x, y;
+    mousex = 0; mousey = 0;
+    x = mouse_x;
+    y = mouse_y;
+    xoffset = BLOCKWIDTH;
+    yoffset = BLOCKHEIGHT;
+    
+    for (int i = y-BOARDOFFSETY-20; i > 0; i-= yoffset)
+        mousex++;
+    
+    for (int i = x-BOARDOFFSETX-BLOCKWIDTH; i > 0; i-= xoffset)
+        mousey++;
+}
+
+/**************
 * Purpose: play the game, draw things to the buffer
 * Precondition: none
 * Postcondition: game is ready to be played
@@ -482,6 +566,7 @@ void gameengine::play()
     //show a menu if one is set, only display it once
     if (logic->getMode() == BUILDMODE)
     {
+    
         //remove the build login screen, they've logged in okay
         if (menu->currentScreen() != NOMENU)
         {
@@ -549,6 +634,8 @@ void gameengine::play()
             //draw their character above the store picture
             drawCharacter(logic->character, 50, 150, SCALEDOWN);
             
+            int depthoffset;
+            
             drawCharacter(logic->character, (logic->y * BLOCKWIDTH)+BOARDOFFSETX, 
                     (logic->x * BLOCKHEIGHT)+BOARDOFFSETY-(BLOCKHEIGHT*2), 1);
             
@@ -589,26 +676,10 @@ void gameengine::play()
         
     }
     
-    /**********
-    * STORY MODE
-    *
-    * they are in story mode, show the appropriate screens
-    **********/
-    if (logic->getMode() == STORYMODE)
+    //FIX THIS!!!!!!!!!!!!! check to see which map they're on
+    if (logic->currentMap == -1)
     {
-        //setup character's initial position on the board
-        if (menu->currentScreen() == NOMENU)
-        {
-            localx = logic->x;
-            localy = logic->y;
-        }
-        
-        menu->setScreen(NOMENU);
-        menu->selector.display = false;
-        logic->character = ALEX; //set character to ALEX by default
-        
-        //load the build background screen
-        blit(graphics->bgimg, buffer, 0, 0, 0, 0, GAMEWIDTH, GAMEHEIGHT);
+        logic->currentMap = MERCYVALLEY;
         
         //load the board into the game
         bool waserror;
@@ -616,6 +687,29 @@ void gameengine::play()
          
         if (!waserror)
             error = 100;
+        
+    }
+    
+    /**********
+    * STORY MODE
+    *
+    * they are in story mode, show the appropriate screens
+    **********/
+    if (logic->getMode() == STORYMODE)
+    {
+        //setup character's position on the board
+        localx = logic->x;
+        localy = logic->y;
+        
+        if (menu->currentScreen() != NOMENU)
+        {
+            menu->setScreen(NOMENU);
+            menu->selector.display = false;
+            logic->character = ALEX; //set character to ALEX by default
+        }
+        
+        //load the build background screen
+        blit(graphics->bgimg, buffer, 0, 0, 0, 0, GAMEWIDTH, GAMEHEIGHT);
                
         //draw the board for the first time
         buildBoard();
@@ -624,13 +718,24 @@ void gameengine::play()
         drawCharacter(logic->character, 50, 150, SCALEDOWN);
         
         //character's position on the SCREEN versus his position on the game window
-        
         localx = localx % 6;
         localy = localy % 6;
+        
+        int depthoffset;
+        
+        switch(logic->depth)
+        {
+            case 0: depthoffset = 0;
+                    break;
+            case 1: depthoffset = 30;
+                    break;    
+        }
+        
+        drawSelector(); //show the selector there
          
         //draw the character on the screen   
         drawCharacter(logic->character, (localy * BLOCKWIDTH)+BOARDOFFSETX+10, 
-                (localx * BLOCKHEIGHT)+BOARDOFFSETY-(BLOCKHEIGHT*2), 1);
+                (localx * BLOCKHEIGHT)+BOARDOFFSETY-(BLOCKHEIGHT*2)+depthoffset, 1);
          
         //check to see if they are standing by a tall block
         blockOver();
@@ -665,6 +770,7 @@ void gameengine::play()
         //draw their character's health hearts around them
             
         //draw the other online characters on the board
+        
     }
     
     /**********
@@ -683,6 +789,7 @@ void gameengine::play()
     //show a menu if one is set, only display it once
     if (menu->currentScreen() != NOMENU && !menu->shown)
     {
+        
         blit(menu->getScreen(0), buffer, 0, 0, 0, 0, GAMEWIDTH, GAMEHEIGHT);
         menu->shown = true;
         
@@ -703,12 +810,71 @@ void gameengine::play()
     * 
     * always draw the selector over the menu
     **********/
-    
     //display the selector once until its moved
     if (menu->selector.display && !menu->selector.show)
     {            
         draw_sprite(buffer, menu->getSelector(), menu->selector.x, menu->selector.y);
         menu->selector.show = true;
+    }
+    
+    /**********
+    * MUSIC CONTROL
+    *
+    * figure this out once everything has been drawn to the screen
+    ***********/
+    if (!music->playing)
+    {
+        music->stop();
+        
+        //not on a map yet
+        if (logic->getMode() != STORYMODE && logic->getMode() != BUILDMODE)
+        {
+            music->play(THEME, 255, 128, 1000, 1);
+            music->playing = true;
+        }
+        
+        if (logic->getMode() == STORYMODE)
+        {
+            //switch depending on their current location
+            if (logic->currentMap == WATERVILLE)
+            {
+                music->play(WATERVILLE, 255, 128, 1000, 1);
+                music->playing = true;
+            }
+                
+            if (logic->currentMap == ASHCANYON)
+                music->play(ASHCANYON, 255, 128, 1000, 1);
+                
+            if (logic->currentMap == LANDSLIDE)
+                music->play(LANDSLIDE, 255, 128, 1000, 1);
+                
+            if (logic->currentMap == HAYMARKET)
+                music->play(HAYMARKET, 255, 128, 1000, 1);
+                
+            if (logic->currentMap == BOULDERCANYON)
+                music->play(BOULDERCANYON, 255, 128, 1000, 1);
+                
+            if (logic->currentMap == BUILDERSGUILD)
+                music->play(BUILDERSGUILD, 255, 128, 1000, 1);
+            
+            if (logic->currentMap == STONECASTLE)
+                music->play(STONECASTLE, 255, 128, 1000, 1);
+            
+            if (logic->currentMap == FUZZYLAND)
+                music->play(FUZZYLAND, 255, 128, 1000, 1);
+            
+            if (logic->currentMap == MERRYFIELD)
+                music->play(MERRYFIELD, 255, 128, 1000, 1);
+                
+            if (logic->currentMap == MERCYVALLEY)
+                music->play(MERCYVALLEY, 255, 128, 1000, 1);
+                
+            if (logic->currentMap == WISHINGWELLFALLS)
+                music->play(WISHINGWELLFALLS, 255, 128, 1000, 1);
+              
+        }
+        
+        music->playing = true;
     }
     
     /**********
@@ -762,10 +928,7 @@ void gameengine::play()
             
             textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Local X: %d", localx);
             textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Local Y %d", localy);
-            
-            textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Top Left: %d, %d", TOPX, TOPY);
-            textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Bottom Right %d, %d", BOTTOMX, BOTTOMY);
-            
+                     
             //textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Scrolling: %d", scrolling);
         }
         
@@ -775,8 +938,8 @@ void gameengine::play()
             textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "X: %d", logic->x);
             textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Y: %d", logic->y);
             textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Z: %d", logic->depth);                
-            textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Localx: %d", localx);
-            textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Localy: %d", localy);
+            textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Mousex: %d", mousex);
+            textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Mousey: %d", mousey);
             textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Block x: %d", logic->selectedblockx);
             textprintf_ex(buffer, font, over, down*multi++, makecol(255, 255, 255), 0, "Block y: %d", logic->selectedblocky);
         }
@@ -798,21 +961,7 @@ void gameengine::play()
 **************/
 bool gameengine::clickBlock(int x, int y)
 {
-    //placing a selected block
-    if (logic->selectedblockx != NOBLOCK && logic->selectedblocky != NOBLOCK)
-    {
-        //placeBlock(selectedx, selectedy, movex, movey); 
-        logic->selectedblockx = NOBLOCK;
-        logic->selectedblocky = NOBLOCK;
-        return true;
-    }
-    //selecting a block out of bounds
-    else if (x < BOARDOFFSETX || y < BOARDOFFSETY-BLOCKHEIGHT) //not on the block board
-    {
-        logic->selectedblockx = logic->selectedblocky = NOBLOCK;  
-        return false;
-    }
-
+    
     //selecting a block in bounds
     int newx, newy, xoffset, yoffset;
     newx = newy = 0;
@@ -823,24 +972,57 @@ bool gameengine::clickBlock(int x, int y)
         newx++;
     
     for (int i = x-BOARDOFFSETX-BLOCKWIDTH; i > 0; i-= xoffset)
-        newy++;    
-         
+        newy++;
+        
+    //selecting a block out of bounds
+    if (x < BOARDOFFSETX || y < BOARDOFFSETY-BLOCKHEIGHT) //not on the block board
+    {
+        logic->selectedblockx = logic->selectedblocky = NOBLOCK;  
+        return false;
+    } 
+    
+    //block they're trying to move to is outside of first frame on the screen
+    if (logic->selectedblockx > 5)
+        newx += logic->x;
+            
+    if (logic->selectedblocky > 5)
+        newy += logic->y;
+        
+    //placing a selected block
+    if (logic->selectedblockx != NOBLOCK && logic->selectedblocky != NOBLOCK)
+    {
+        bool success;
+        
+        //try to move the block
+        success = logic->placeBlock(newx, newy); 
+        
+        if (success) //play moveblock sound
+            music->play(BLOCKFALL, 255, 128, 1000, 0);
+        else //play error sound
+            music->play(ERRORMOVE, 255, 128, 1000, 0);
+            
+        logic->selectedblockx = NOBLOCK;
+        logic->selectedblocky = NOBLOCK;
+        
+        return true;
+    }
+    
+    //selecting a block to move
     logic->selectedblockx = newx;
     logic->selectedblocky = newy;
+    
+    //block they're trying to select is outside of the first frame
+    if (logic->x > 5)
+        logic->selectedblockx += logic->x;
+        
+    if (logic->y > 5)
+        logic->selectedblocky += logic->y;
     
     return true;
 
 }
 
-/**************
-* Purpose: 
-* Precondition: 
-* Postcondition: 
-**************/
-bool gameengine::characterOnBlock(int x, int y)
-{
-   return false;     
-}
+
 
 /**************
 * Purpose: draw a block over the character if there is a tall block in front
@@ -856,9 +1038,9 @@ void gameengine::blockOver()
     
     switch(logic->depth)
     {
-        case 0: depthamt = 180;
+        case 0: depthamt = 0;
             break;
-        case 1: depthamt = 133;
+        case 1: depthamt = 44;
             break;
         case 2: depthamt = 90;
             break;
@@ -868,7 +1050,7 @@ void gameengine::blockOver()
     
         //draw the blocks below on top of the character
         //then draw the one underneat that
-        // if the one underneat that is tall too, then draw the next one as wel          
+        // if the one underneath that is tall too, then draw the next one as wel          
             if (logic->tallBlock(logic->x+1, logic->y, logic->depth))
             {
                 BITMAP* temp;
@@ -876,14 +1058,73 @@ void gameengine::blockOver()
                 clear(temp);
                 
                 blit(graphics->getBlock(logic->getBlock(logic->x+2, logic->y, logic->depth)), temp, 0, 0, 0, 0, BLOCKWIDTH, BLOCKHEIGHT+5);
-                draw_sprite(buffer, graphics->getBlock(logic->getBlock(logic->x+1, logic->y, logic->depth)), (BLOCKWIDTH * localy)+BOARDOFFSETX+10, (BLOCKHEIGHT * localx+1)+BOARDOFFSETY-49);
-                draw_sprite(buffer, temp, (BLOCKWIDTH * localy)+BOARDOFFSETX+10, (BLOCKHEIGHT * localx+2)+BOARDOFFSETY+35);
+                draw_sprite(buffer, graphics->getBlock(logic->getBlock(logic->x+1, logic->y, logic->depth)), (BLOCKWIDTH * localy)+BOARDOFFSETX+10, (BLOCKHEIGHT * localx+1)+BOARDOFFSETY-49 + depthamt);
+                draw_sprite(buffer, temp, (BLOCKWIDTH * localy)+BOARDOFFSETX+10, (BLOCKHEIGHT * localx+2)+BOARDOFFSETY+35+depthamt);
            
                 destroy_bitmap(temp);
-            }    
+            } 
+            
+            //check to see if they have a block on the depth above covering them up          
+            if ((logic->depth != 0 && logic->getBlock(logic->x+1, logic->y, logic->depth-1) != NOBLOCK))
+            {
+                BITMAP* temp;
+                temp = create_bitmap(BLOCKWIDTH, BLOCKHEIGHT + 5);
+                clear(temp);
+                
+                //check if there is a block on the level above that needs to blit over
+                if (logic->getBlock(logic->x+2, logic->y, logic->depth-1) != NOBLOCK)
+                    blit(graphics->getBlock(logic->getBlock(logic->x+2, logic->y, logic->depth-1)), temp, 0, 0, 0, 0, BLOCKWIDTH, BLOCKHEIGHT+5);
+                
+                //check if there is a tall block on the level below
+                else if (logic->getBlock(logic->x+2, logic->y, logic->depth) != NOBLOCK)
+                    blit(graphics->getBlock(logic->getBlock(logic->x+2, logic->y, logic->depth)), temp, 0, 0, 0, 0, BLOCKWIDTH, BLOCKHEIGHT+5);
+                
+                //draw block below the character over the character  
+                draw_sprite(buffer, graphics->getBlock(logic->getBlock(logic->x+1, logic->y, logic->depth-1)), (BLOCKWIDTH * localy)+BOARDOFFSETX+10, (BLOCKHEIGHT * localx+1)+BOARDOFFSETY-depthamt-5);
+                
+                //there is a block on the level above the character after the block drawn over them
+                if (logic->getBlock(logic->x+2, logic->y, logic->depth-1) != NOBLOCK)
+                    draw_sprite(buffer, temp, (BLOCKWIDTH * localy)+BOARDOFFSETX+10, (BLOCKHEIGHT * localx+2)+BOARDOFFSETY+depthamt-9);
+                
+                //there is a block on the same level as the character under the block drawn over them
+                else if (logic->getBlock(logic->x+2, logic->y, logic->depth) != NOBLOCK)
+                    draw_sprite(buffer, temp, (BLOCKWIDTH * localy)+BOARDOFFSETX+10, (BLOCKHEIGHT * localx+2)+BOARDOFFSETY+35+depthamt);
+           
+                destroy_bitmap(temp);
+            } 
+            
+            //block selector is behind a taller block
+            if ((logic->getBlock(mousex+1, mousey, 0) != NOBLOCK))  
+            {
+                BITMAP* temp;
+                temp = create_bitmap(BLOCKWIDTH, BLOCKHEIGHT + 5);
+                clear(temp);
+                depthamt = 44;
+                
+                //check if there is a block on the level above that needs to blit over
+                if (logic->getBlock(mousex+2, mousey, 1) != NOBLOCK)
+                    blit(graphics->getBlock(logic->getBlock(mousex+2, mousey, 1)), temp, 0, 0, 0, 0, BLOCKWIDTH, BLOCKHEIGHT+5);
+                
+                //check if there is a tall block on the level below
+                else if (logic->getBlock(mousex+2, mousey, 0) != NOBLOCK)
+                    blit(graphics->getBlock(logic->getBlock(mousex+2, mousey, 0)), temp, 0, 0, 0, 0, BLOCKWIDTH, BLOCKHEIGHT+5);
+                  
+                //draw block below the character over the character  
+                draw_sprite(buffer, graphics->getBlock(logic->getBlock(mousex+1, mousey, 0)), (BLOCKWIDTH * mousey)+BOARDOFFSETX+10, (BLOCKHEIGHT * mousex+1)+BOARDOFFSETY-depthamt-5);
+                
+                /*///there is a block on the level above the character after the block drawn over them
+                if (logic->getBlock(mousex+2, mousey, 1) != NOBLOCK)
+                    draw_sprite(buffer, temp, (BLOCKWIDTH * mousey)+BOARDOFFSETX+10, (BLOCKHEIGHT+mousex+2)+BOARDOFFSETY+depthamt-9);
+                
+                //there is a block on the same level as the character under the block drawn over them
+                else if (logic->getBlock(mousex+2, mousey, 0) != NOBLOCK)
+                    draw_sprite(buffer, temp, (BLOCKWIDTH * mousey)+BOARDOFFSETX+10, (BLOCKHEIGHT * mousex+2)+BOARDOFFSETY+35+depthamt);
+           
+                */
+                destroy_bitmap(temp);
+            }  
         
-}
- 
+} 
 
 /**************
 * Purpose: draw the board and the character as it moves around
@@ -928,36 +1169,30 @@ void gameengine::drawBuildBoard(int xpos, int ypos)
         for (int j = ypos; j < ypos+DRAWBOARDMAXOFFSET+1; j++)
         {
             
-            /*if (logic->getBlock(i, j, 3) != NOBLOCK) //BOTTOM BLOCKS (draw these first)
+            /*if (logic->getBlock(i, j, 4) != NOBLOCK) //BOTTOM BLOCKS (draw these first)
+                draw_sprite(buffer, graphics->getBlock(logic->getBlock(i, j, 4)), (BLOCKWIDTH * j)+BOARDOFFSETX, (BLOCKHEIGHT * i)+BOARDOFFSETY-180);
+            
+            if (logic->getBlock(i, j, 3) != NOBLOCK) 
                 draw_sprite(buffer, graphics->getBlock(logic->getBlock(i, j, 3)), (BLOCKWIDTH * y)+BOARDOFFSETY, (BLOCKHEIGHT * x)+BOARDOFFSETX);
             
             if (logic->getBlock(i, j, 2)!= NOBLOCK)
-                draw_sprite(buffer, graphics->getBlock(logic->getBlock(i, j, 2)), (BLOCKWIDTH * y)+BOARDOFFSETX+10, (BLOCKHEIGHT * x)+BOARDOFFSETY-50);
-            
+                draw_sprite(buffer, graphics->getBlock(logic->getBlock(i, j, 2)), (BLOCKWIDTH * y)+BOARDOFFSETX+10, (BLOCKHEIGHT * x)+BOARDOFFSETY-45);
+            */
+             
             if (logic->getBlock(i, j, 1)!= NOBLOCK)
                 draw_sprite(buffer, graphics->getBlock(logic->getBlock(i, j, 1)), (BLOCKWIDTH * y)+BOARDOFFSETX+10, (BLOCKHEIGHT * x)+BOARDOFFSETY-89); 
-            */ 
+
               
-            if (logic->getBlock(i, j, 0)!= NOBLOCK)
+            if (logic->getBlock(i, j, 0)!= NOBLOCK) //TOP BLOCKS (draw these last)
                 draw_sprite(buffer, graphics->getBlock(logic->getBlock(i, j, 0)), (BLOCKWIDTH * y)+BOARDOFFSETX+10, (BLOCKHEIGHT * x)+BOARDOFFSETY-133);
             
             y++; 
-            //if (logic->getBlock(i, j, 4) != NOBLOCK)
-            //    draw_sprite(buffer, graphics->getBlock(logic->getBlock(i, j, 4)), (BLOCKWIDTH * j)+BOARDOFFSETX, (BLOCKHEIGHT * i)+BOARDOFFSETY-180);
             
-            //TOP BLOCKS (draw these last)
         }
         
-        y = 0; 
+        y = 0; //reset y value so blocks wrap around
         x++;
     }
-        
-        /*if (graphics->boardimg == NULL)
-        {
-            //create the graphic
-            graphics->boardimg = create_bitmap(GAMEWIDTH, GAMEHEIGHT);
-            blit(buffer, graphics->boardimg, 0, 0, 0, 0, GAMEWIDTH, GAMEHEIGHT);            
-        }*/
     
 }
 
@@ -1218,16 +1453,6 @@ bool gameengine::stopMovie()
 {
     return false;
 } 
-		
-/**************
-* Purpose: play the appropriate music
-* Precondition: the number of the music to be played 
-* Postcondition: the music is playing
-**************/
-int gameengine::playMusic(int num)
-{
-    return 0;
-}
 
 /**************
 * Purpose: change the volume
@@ -1401,6 +1626,7 @@ bool gameengine::exitEngine()
         
     //deallocate all the menu images
     menu->destoryGraphics();
+    music->destroyMusic();
     
     return 1;
 }
@@ -1431,34 +1657,4 @@ int gameengine::quit(void)
    }
    else
       return 0;
-}
-
-/**************
-* Purpose: figure out how big of an area to blit on the map
-* Precondition: none
-* Postcondition: TOPX, TOPY, BOTTOMX, BOTTOMY values have been reset
-**************/
-bool gameengine::calculateBlitPosition(int dir)
-{
-    int cutoff = 25;
-    
-    if (!dir) //moving to the right
-    {
-        //top left point of the blitting square
-        TOPX = BOARDOFFSETX + (localx-1 * BLOCKWIDTH);
-        TOPY = BOARDOFFSETY + (localy-1 * BLOCKHEIGHT)-cutoff;
-    }
-    else //moving to the left
-    {
-        //top left point of the blitting square
-        TOPX = BOARDOFFSETX + (localx+1 * BLOCKWIDTH);
-        TOPY = BOARDOFFSETY + (localy+1 * BLOCKHEIGHT)-cutoff;    
-    }
-    
-    if (TOPX < BOARDOFFSETX)
-        TOPX = BOARDOFFSETX;
-    
-    //bottom right point of the blitting square                
-    BOTTOMX = BOARDOFFSETX + ((localx+1) * BLOCKWIDTH);
-    BOTTOMY = BOARDOFFSETY + ((localy+1) * BLOCKHEIGHT);    
 }

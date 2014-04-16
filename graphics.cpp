@@ -44,6 +44,9 @@ void gamegraphics::loadGraphics()
     ravenimg = load_bitmap(RAVENIMAGE, NULL);
     bellaimg = load_bitmap(BELLAIMAGE, NULL);
     
+    //load the selector
+    selectimg = load_bitmap(SELECTIMAGE, NULL);
+    
     //load the jewel images
     greenjewelimg = load_bitmap(GREENJEWELIMAGE, NULL);
     bluejewelimg = load_bitmap(BLUEJEWELIMAGE, NULL);
@@ -111,6 +114,9 @@ void gamegraphics::destoryGraphics()
     destroy_bitmap(keyimg);
     destroy_bitmap(starimg);
     destroy_bitmap(heartimg);
+    
+    //destroy the select image
+    destroy_bitmap(selectimg);
     
     //destroy jewel images
     destroy_bitmap(greenjewelimg);

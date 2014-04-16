@@ -22,6 +22,10 @@ game::game()
     health = MAXHEALTH; //set it all the way up
     selectedblockx = NOBLOCK;
     selectedblocky = NOBLOCK;
+    depth = 1;
+    currentMap = -1;
+    x = 0;
+    y = 0;
     
     //create the game map object
     //worldmap = new map();
@@ -397,8 +401,20 @@ bool game::validMove(int newx, int newy)
     newy = y + newy;
     
     //there is a tall block there
-    if (tallBlock(newx, newy, 0))
+    if (tallBlock(newx, newy, depth))
         return 0;     
+     
+    //can't walk on water blocks   
+    if (waterBlock(newx, newy, depth))
+        return 0;
+     
+    //can't walk where there aren't any blocks   
+    if (noBlock(newx, newy, depth))
+        return 0;
+     
+    //can't move on blocks that have something on top of them at that depth   
+    if (depth != 0 && getBlock(newx, newy, depth-1) != NOBLOCK)
+        return 0;
         
     //if (getBlock(localx, localy, depth) == NOBLOCK)
     //    return 0;
@@ -704,6 +720,7 @@ bool game::parseMapFile(char *filename)
 {
     ifstream file;
     char name[255], peek, block[2], x[3], y[3], z[3];
+    int newblock = -1;
     
     file.open(filename);
     
@@ -725,7 +742,6 @@ bool game::parseMapFile(char *filename)
         int newz = atoi(z);
         int newx = atoi(x);
         int newy = atoi(y);
-        int newblock;
         
         if (block[0] == '-') //no block in that spot
             newblock = -1;
@@ -751,6 +767,9 @@ bool game::parseMapFile(char *filename)
                 break;
         }
     }
+    
+    //FIX THIS!!!!!!!! //makes sure 0,0 is empty
+    storymap0[0][0] = -1;
         
     return true;
 }
@@ -874,6 +893,7 @@ int game::tallBlock(int x, int y, int level)
                     else
                         return false;
                     break;
+            default: return false;
 
         }  
     }
@@ -903,7 +923,339 @@ int game::tallBlock(int x, int y, int level)
                     else
                         return false;
                     break;
+            default: return false;
         }
     } 
 }
 
+/***********
+* Purpose: check to see if there is a water block here
+* Precondition: the position and level to check
+* Postcondition: returns true if a water block is there
+***********/
+int game::waterBlock(int x, int y, int level)
+{
+    if (mode == BUILDMODE)
+    {
+        switch (level)
+        {
+            case 4: if (buildmap4[x][y] == WATER)
+                        return true;
+                    else
+                        return false;
+                    break;
+                    
+            case 3: if (buildmap3[x][y] == WATER)
+                        return true;
+                    else
+                        return false;
+                    break;
+            
+            case 2: if (buildmap2[x][y] == WATER)
+                        return true;
+                    else
+                        return false;
+                    break;  
+                    
+            case 1: if (buildmap1[x][y] == WATER)
+                        return true;
+                    else
+                        return false;
+                    break;
+            case 0: if (buildmap0[x][y] == WATER)
+                        return true;
+                    else
+                        return false;
+                    break;
+        }  
+    }
+    else //storymode
+    {
+        switch (level)
+        {
+            case 4: if (storymap4[x][y] == WATER)
+                        return true;
+                    else
+                        return false;
+                    break;
+            
+            case 3: if (storymap3[x][y] == WATER)
+                        return true;
+                    else
+                        return false;
+                    break;
+            
+            case 2: if (storymap2[x][y] == WATER)
+                        return true;
+                    else
+                        return false;
+                    break;  
+                    
+            case 1: if (storymap1[x][y] == WATER)
+                        return true;
+                    else
+                        return false;
+                    break;
+            case 0: if (storymap0[x][y] == WATER)
+                        return true;
+                    else
+                        return false;
+                    break;
+        }
+    } 
+}
+
+/***********
+* Purpose: check to see if there is no block here
+* Precondition: the position and level to check
+* Postcondition: returns true if no block is there
+***********/
+int game::noBlock(int x, int y, int level)
+{
+    if (mode == BUILDMODE)
+    {
+        switch (level)
+        {
+            case 4: if (buildmap4[x][y] == NOBLOCK)
+                        return true;
+                    else
+                        return false;
+                    break;
+                    
+            case 3: if (buildmap3[x][y] == NOBLOCK)
+                        return true;
+                    else
+                        return false;
+                    break;
+            
+            case 2: if (buildmap2[x][y] == NOBLOCK)
+                        return true;
+                    else
+                        return false;
+                    break;  
+                    
+            case 1: if (buildmap1[x][y] == NOBLOCK)
+                        return true;
+                    else
+                        return false;
+                    break;
+            case 0: if (buildmap0[x][y] == NOBLOCK)
+                        return true;
+                    else
+                        return false;
+                    break;
+        }  
+    }
+    else //storymode
+    {
+        switch (level)
+        {
+            case 4: if (storymap4[x][y] == NOBLOCK)
+                        return true;
+                    else
+                        return false;
+                    break;
+            
+            case 3: if (storymap3[x][y] == NOBLOCK)
+                        return true;
+                    else
+                        return false;
+                    break;
+            
+            case 2: if (storymap2[x][y] == NOBLOCK)
+                        return true;
+                    else
+                        return false;
+                    break;  
+                    
+            case 1: if (storymap1[x][y] == NOBLOCK)
+                        return true;
+                    else
+                        return false;
+                    break;
+            case 0: if (storymap0[x][y] == NOBLOCK)
+                        return true;
+                    else
+                        return false;
+                    break;
+        }
+    } 
+}
+
+/**************
+* Purpose: move block here (if possible) and let it fall
+* Precondition: x and y of block to move, new x and y to move it to
+* Postcondition: moves block if possible, otherwise play error sound
+**************/
+bool game::placeBlock(int newx, int newy)
+{
+    //check to see if there's a block they can pick up at currentx,currenty
+    int newdepth = -1;
+    int block = NOBLOCK;
+
+    //make sure they're not trying to move the block to its same position
+    if (selectedblockx == newx && selectedblocky == newy)
+        return false;
+      
+    //character on that block  
+    if (characterOnBlock())
+        return false;
+      
+    //tall block there  
+    if (depth != 0)
+        if (tallBlock(newx, newy, depth))
+            return false;
+        
+    //can only move it one up or one down
+    if (newx > selectedblockx+1 || newx < selectedblockx-1)
+        return false;
+      
+    //can only move it one left or one right  
+    if (newy > selectedblocky+1 || newy < selectedblocky-1)
+        return false;
+        
+    //can't move the block on top of where they're standing
+    if (newx == x && newy == y)
+        return false;
+    
+    //trying this in story mode
+    if (getMode() == STORYMODE)
+    {
+        //trying to move the block to a position thats already full
+        if (storymap0[newx][newy] != NOBLOCK)
+            return false;
+        
+        if (storymap0[selectedblockx][selectedblocky] != NOBLOCK) //block on very top level
+        {
+            block = storymap0[selectedblockx][selectedblocky];
+            newdepth = 0;
+        }
+            
+        if (newdepth == -1 && storymap1[selectedblockx][selectedblocky] != NOBLOCK) //no block on top level
+        {
+            block = storymap1[selectedblockx][selectedblocky];
+            newdepth = 1;
+        }
+            
+        if (newdepth == -1 && storymap2[selectedblockx][selectedblocky] != NOBLOCK) //second level
+        {
+            newdepth = 2;
+            block = storymap2[selectedblockx][selectedblocky];
+        }
+            
+        if (newdepth == -1 && storymap3[selectedblockx][selectedblocky] != NOBLOCK) //third level
+        {
+            block = storymap3[selectedblockx][selectedblocky];
+            newdepth = 3;
+        }
+            
+        if (newdepth != -1 && storymap4[selectedblockx][selectedblocky] != NOBLOCK) //fourth level
+        {
+            newdepth = 4;
+            block = storymap4[selectedblockx][selectedblocky];
+        }
+            
+        //no block exists at that position
+        if (newdepth == -1) 
+            return false;
+            
+        //they selected a tall block
+        if (block == TSTONE || block == THOUSE)
+            return false;
+        
+        //the selected block exists, try moving it to the new position
+        //check to see if it can drop down to lower levels
+        if (storymap0[newx][newy] == NOBLOCK)
+        {
+            if (storymap1[newx][newy] == NOBLOCK)
+                if (storymap2[newx][newy] == NOBLOCK)
+                    if (storymap3[newx][newy] == NOBLOCK)
+                        if (storymap4[newx][newy] == NOBLOCK)
+                            storymap4[newx][newy] = block;
+                        else storymap3[newx][newy] = block;
+                    else storymap2[newx][newy] = block;
+                else storymap1[newx][newy] = block;
+            else storymap0[newx][newy] = block;
+        }
+        else if (storymap1[newx][newy] == NOBLOCK)
+        {
+                if (storymap2[newx][newy] == NOBLOCK)
+                    if (storymap3[newx][newy] == NOBLOCK)
+                        if (storymap4[newx][newy] == NOBLOCK)
+                            storymap4[newx][newy] = block;
+                        else storymap3[newx][newy] = block;
+                    else storymap2[newx][newy] = block;
+                else storymap1[newx][newy] = block;
+        }
+        else if (storymap2[newx][newy] == NOBLOCK)
+        {
+                    if (storymap3[newx][newy] == NOBLOCK)
+                        if (storymap4[newx][newy] == NOBLOCK)
+                            storymap4[newx][newy] = block;
+                        else storymap3[newx][newy] = block;
+                    else storymap2[newx][newy] = block;
+        }
+        else if (storymap3[newx][newy] == NOBLOCK)
+        {
+                        if (storymap4[newx][newy] == NOBLOCK)
+                            storymap4[newx][newy] = block;
+                        else storymap3[newx][newy] = block;
+        }
+        else if (storymap4[newx][newy] == NOBLOCK)
+            storymap4[newx][newy] = block;
+        
+        //remove this block from its old position
+        switch(newdepth)
+        {
+            case 0: storymap0[selectedblockx][selectedblocky] = NOBLOCK;
+                    break;
+            case 1: storymap1[selectedblockx][selectedblocky] = NOBLOCK;
+                    break;
+            case 2: storymap2[selectedblockx][selectedblocky] = NOBLOCK;
+                    break;
+            case 3: storymap3[selectedblockx][selectedblocky] = NOBLOCK;
+                    break;
+            case 4: storymap4[selectedblockx][selectedblocky] = NOBLOCK;
+                    break;   
+            case -1: return false; //something went wrong
+                    break;
+        }
+            
+        //successful block movement
+        return true;
+    }
+    else //trying this in build mode
+    {
+        //not working yet
+        return false;
+    }
+    
+    //successful block movement
+    return false;
+}
+
+/**************
+* Purpose: return true if their character (or any other) is on selected block 
+* Precondition: selectedblockx and selectedblocky are valid
+* Postcondition: returns true if their character (or any other) is here
+**************/
+bool game::characterOnBlock()
+{
+    //they are standing on this block
+    if (selectedblockx == x && selectedblocky == y)
+        return true;
+
+    //check to see if a NPC is standing there
+    if (mode == STORYMODE)
+    { 
+        
+    }
+    
+    //check to see if another player is standing there
+    if (mode == BUILDMODE) 
+    {
+       
+    }
+    
+   return false;     
+}

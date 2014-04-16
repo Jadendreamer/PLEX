@@ -44,6 +44,9 @@
 #define GREENJEWELIMAGE  "images/gem2.pcx"
 #define YELLOWJEWELIMAGE "images/gem3.pcx"
 
+//selector image
+#define SELECTIMAGE "images/select.pcx"
+
 //store items
 #define SHOVELIMAGE     ""
 #define DYNAMITEIMAGE   ""
@@ -161,6 +164,9 @@ class gamegraphics
         BITMAP *talkboximg;
         BITMAP *talkbubbleimg;
         BITMAP *storeimg;
+        
+        //selector
+        BITMAP *selectimg;
         
         //ground block images
         BITMAP *woodimg;

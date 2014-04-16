@@ -55,6 +55,7 @@ class gameengine
 		void input(); //respond to game input
 		void keyInput(); //respond to key input
 		void mouseInput(); //respond to mouse input
+		void showSelector(); //show the selector on the screen
 		
 		//gameplay status
 		void play(); //play the game, show everything to the screen
@@ -83,7 +84,6 @@ class gameengine
 		bool stopMovie(); //go to the end of the movie (ie don't want to watch the movie)
 		
 		//Music related options
-		int  playMusic(int num); //play the appropriate music
 		int  volume(int change); //change the volume
 		bool mute(); //mute the sound
 		bool unmute(); //turn mute off
@@ -92,7 +92,7 @@ class gameengine
 		//Block related functions
 		bool clickBlock(int x, int y); //figure out which block they are clicking on
 		                               //from given mouse x and y position
-		bool characterOnBlock(int x, int y); //return false if there isn't a character on this block
+		void caluclateMouseBlock(); //figures out the x and y for the block the mouse is over
 		
 		//Graphic related options
         bool mouse(bool show); //show the mouse (or not)
@@ -102,6 +102,7 @@ class gameengine
         void drawBuildBoard(int x, int y); //draw the board on the screen
         bool calculateBlitPosition(int dir); //figure out how big of an area to blit
         void blockOver(); //draw block over the character if they are behind a tall block
+        void drawSelector(); //draw the block selector (not menu selector)
         
         //Build mode related options
         void buildBoard(); //update board database info the board as the
@@ -130,15 +131,9 @@ class gameengine
         int  scrollmax; //scrolling incrementer
         int  localx; //x position on the smaller screen
         int  localy; //y position on the smaller screen
+        int  mousex; //where the mouse block position is on the screen for x
+        int  mousey; //where the mouse block position is on the screen for y
         int  id; //database member id
-        
-        //dynamic constant values used to blit
-        //over the old character image on the game
-        //board
-        int TOPX;
-        int TOPY;
-        int BOTTOMX;
-        int BOTTOMY;
         
         //objects used in the game
         gamemenu     *menu;
@@ -158,6 +153,7 @@ class gameengine
         bool enterPressed;
         bool rmPressed;
         bool lmPressed;
+        bool F2Pressed;
         
 };
 
